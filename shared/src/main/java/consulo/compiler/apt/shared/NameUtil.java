@@ -1,7 +1,5 @@
 package consulo.compiler.apt.shared;
 
-import javax.lang.model.SourceVersion;
-
 /**
  * @author VISTALL
  * @since 2024-08-22
@@ -19,15 +17,7 @@ public class NameUtil {
         else if (c == '2') {
             return "two" + text.substring(1, text.length());
         }
-        return escapeString(text);
-    }
-
-    private static String escapeString(String name) {
-        if (!SourceVersion.isName(name)) {
-            return "_" + name;
-        }
-
-        return name;
+        return text;
     }
 
     public static String captilizeByDot(String id) {

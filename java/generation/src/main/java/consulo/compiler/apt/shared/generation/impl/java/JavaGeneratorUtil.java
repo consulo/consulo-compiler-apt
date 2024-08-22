@@ -6,6 +6,7 @@ import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Modifier;
 
 /**
@@ -13,6 +14,14 @@ import javax.lang.model.element.Modifier;
  * @since 2024-08-22
  */
 public class JavaGeneratorUtil {
+    public static String escapeString(String name) {
+        if (!SourceVersion.isName(name)) {
+            return "_" + name;
+        }
+
+        return name;
+    }
+
     public static TypeName toTypeName(GeneratedType generatedType) {
         if (generatedType instanceof GeneratedClassType classType) {
             return ClassName.bestGuess(classType.className());

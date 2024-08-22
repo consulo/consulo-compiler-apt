@@ -2,7 +2,7 @@ package test;
 
 import consulo.compiler.apt.shared.LocalizeGenerator;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
-import consulo.compiler.apt.shared.generation.impl.JavaGeneratedElementFactory;
+import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 
 import java.io.StringWriter;
 import java.net.URL;
@@ -14,7 +14,7 @@ import java.nio.file.Path;
  */
 public class LocalizeTest {
     public static void main(String[] args) throws Exception {
-        JavaGeneratedElementFactory factory = new JavaGeneratedElementFactory();
+        GeneratedElementFactory factory = GeneratedElementFactory.of("java");
 
         LocalizeGenerator generator = new LocalizeGenerator(factory);
 
@@ -30,7 +30,7 @@ public class LocalizeTest {
         }
 
         String value = stringWriter.toString();
-        
+
         System.out.println();
     }
 }

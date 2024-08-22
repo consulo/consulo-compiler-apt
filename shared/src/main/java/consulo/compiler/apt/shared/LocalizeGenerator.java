@@ -1,6 +1,5 @@
 package consulo.compiler.apt.shared;
 
-import com.squareup.javapoet.MethodSpec;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
@@ -44,7 +43,7 @@ public class LocalizeGenerator {
         GeneratedClassType localizeValue = new GeneratedClassType("consulo.localize.LocalizeValue");
 
         List<GeneratedVariable> fields = new ArrayList<>();
-        List<MethodSpec> methodSpecs = new ArrayList<>();
+       // List<MethodSpec> methodSpecs = new ArrayList<>();
 
         GeneratedVariable idField = myElementFactory.newVariable(new GeneratedClassType(String.class), "ID");
         idField.withModifiers(GeneratedModifier.PUBLIC, GeneratedModifier.STATIC, GeneratedModifier.FINAL);

@@ -4,8 +4,6 @@
  */
 module compiler.apt.shared {
     requires org.yaml.snakeyaml;
-    requires com.squareup.javapoet;
-    requires java.compiler;
 
     exports consulo.compiler.apt.shared;
     exports consulo.compiler.apt.shared.generation;
@@ -13,5 +11,5 @@ module compiler.apt.shared {
     exports consulo.compiler.apt.shared.generation.expression;
     //exports consulo.compiler.apt.shared.generation.statement;
 
-    exports consulo.compiler.apt.shared.generation.impl;
+    uses consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 }

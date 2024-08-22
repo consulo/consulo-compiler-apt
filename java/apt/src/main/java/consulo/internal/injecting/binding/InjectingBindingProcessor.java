@@ -20,7 +20,6 @@ import consulo.compiler.apt.shared.ComponentScope;
 import consulo.compiler.apt.shared.ConsuloClasses;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
-import consulo.compiler.apt.shared.generation.impl.JavaGeneratedElementFactory;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
@@ -82,7 +81,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
         String injectingBindingClassName = "consulo.component.bind.InjectingBinding";
         ClassName injectingBindingClass = ClassName.bestGuess(injectingBindingClassName);
 
-        GeneratedElementFactory factory = new JavaGeneratedElementFactory();
+        GeneratedElementFactory factory = GeneratedElementFactory.of("java");
 
         for (TypeElement annotation : annotations) {
             Set<? extends Element> elementsAnnotatedWith = roundEnv.getElementsAnnotatedWith(annotation);

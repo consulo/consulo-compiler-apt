@@ -47,11 +47,5 @@
             <artifactId>snakeyaml</artifactId>
             <version>1.29</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.squareup</groupId>
-            <artifactId>javapoet</artifactId>
-            <version>1.12.1</version>
-        </dependency>
     </dependencies>
 </project>
