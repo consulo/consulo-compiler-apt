@@ -1,0 +1,22 @@
+xdebugger.colors.page.name:
+  text: Debugger
+debugger.configurable.display.name:
+  text: Debugger
+debugger.dataViews.display.name:
+  text: Data Views
+debugger.stepping.display.name:
+  text: Stepping
+debugger.hotswap.display.name:
+  text: HotSwap
+xdebugger.default.content.title:
+  text: Debug
+xdebugger.debugger.tab.title:
+  text: Debugger
+xdebugger.attach.popup.title:
+  text: Attach with {0} To
+xdebugger.attach.host.popup.title:
+  text: View {0} processes
+xdebugger.attach.toLocal.popup.selectDebugger.title:
+  text: Debugger
+xdebugger.attach.toLocal.popup.recent:
+  text: Recent

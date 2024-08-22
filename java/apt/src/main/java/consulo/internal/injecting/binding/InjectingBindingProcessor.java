@@ -18,6 +18,9 @@ package consulo.internal.injecting.binding;
 import com.squareup.javapoet.*;
 import consulo.compiler.apt.shared.ComponentScope;
 import consulo.compiler.apt.shared.ConsuloClasses;
+import consulo.compiler.apt.shared.generation.GeneratedClass;
+import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
+import consulo.compiler.apt.shared.generation.impl.JavaGeneratedElementFactory;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
@@ -79,6 +82,8 @@ public class InjectingBindingProcessor extends BindingProcessor {
         String injectingBindingClassName = "consulo.component.bind.InjectingBinding";
         ClassName injectingBindingClass = ClassName.bestGuess(injectingBindingClassName);
 
+        GeneratedElementFactory factory = new JavaGeneratedElementFactory();
+
         for (TypeElement annotation : annotations) {
             Set<? extends Element> elementsAnnotatedWith = roundEnv.getElementsAnnotatedWith(annotation);
 
@@ -106,9 +111,10 @@ public class InjectingBindingProcessor extends BindingProcessor {
 
                 try {
                     String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
-                    JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
 
                     providers.computeIfAbsent(injectingBindingClassName, (c) -> new HashSet<>()).add(bindingQualifiedName);
+
+                    GeneratedClass generatedClass = factory.newClass(typeElement.getQualifiedName().toString(), typeElement.getSimpleName().toString() + "_Binding");
 
                     TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
                     bindBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
@@ -231,6 +237,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
 
                     JavaFile javaFile = JavaFile.builder(packageElement.getQualifiedName().toString(), bindClass).build();
 
+                    JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
                     try (Writer writer = bindingObject.openWriter()) {
                         javaFile.writeTo(writer);
                     }
