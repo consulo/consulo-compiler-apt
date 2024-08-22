@@ -20,7 +20,7 @@ public interface GeneratedElementFactory {
             }
         }
 
-        throw new UnsupportedOperationException("Unknown generator factory " + id);
+        throw new UnsupportedOperationException("Unknown generator factory for '" + id + "'");
     }
 
     String getId();
