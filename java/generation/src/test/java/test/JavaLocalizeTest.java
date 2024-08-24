@@ -1,6 +1,6 @@
 package test;
 
-import consulo.compiler.apt.shared.LocalizeGenerator;
+import consulo.compiler.apt.shared.generator.LocalizeGenerator;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 import org.junit.jupiter.api.Assertions;

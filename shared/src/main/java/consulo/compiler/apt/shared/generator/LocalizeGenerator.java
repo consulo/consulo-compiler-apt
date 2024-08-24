@@ -1,5 +1,7 @@
-package consulo.compiler.apt.shared;
+package consulo.compiler.apt.shared.generator;
 
+import consulo.compiler.apt.shared.GenerationException;
+import consulo.compiler.apt.shared.NameUtil;
 import consulo.compiler.apt.shared.generation.*;
 import consulo.compiler.apt.shared.generation.expression.GeneratedClassReferenceExpression;
 import consulo.compiler.apt.shared.generation.expression.GeneratedExpression;
