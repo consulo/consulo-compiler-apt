@@ -9,7 +9,7 @@ module compiler.apt.shared {
     exports consulo.compiler.apt.shared.generation;
     exports consulo.compiler.apt.shared.generation.type;
     exports consulo.compiler.apt.shared.generation.expression;
-    //exports consulo.compiler.apt.shared.generation.statement;
+    exports consulo.compiler.apt.shared.generation.statement;
 
     uses consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 }

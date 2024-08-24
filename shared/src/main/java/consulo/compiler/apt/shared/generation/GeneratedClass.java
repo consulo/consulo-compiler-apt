@@ -15,6 +15,8 @@ public interface GeneratedClass {
 
     void withFields(List<? extends GeneratedVariable> fields);
 
+    void withMethods(List<? extends GeneratedMethod> methods);
+
     void write(Path sourceDir) throws Exception;
 
     void write(Writer writer) throws Exception;

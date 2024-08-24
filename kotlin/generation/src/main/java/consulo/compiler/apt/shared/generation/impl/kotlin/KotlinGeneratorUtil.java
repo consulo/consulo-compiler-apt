@@ -18,6 +18,10 @@ public class KotlinGeneratorUtil {
             if ("java.lang.String".equals(classType.className())) {
                 return TypeNames.STRING;
             }
+
+            if ("java.lang.Object".equals(classType.className())) {
+                return TypeNames.ANY;
+            }
             
             return ClassName.bestGuess(classType.className());
         }

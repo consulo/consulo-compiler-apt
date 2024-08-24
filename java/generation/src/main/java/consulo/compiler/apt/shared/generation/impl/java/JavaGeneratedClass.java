@@ -3,6 +3,7 @@ package consulo.compiler.apt.shared.generation.impl.java;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.TypeSpec;
 import consulo.compiler.apt.shared.generation.BaseGeneratedClass;
+import consulo.compiler.apt.shared.generation.GeneratedMethod;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
 
 import javax.lang.model.element.Modifier;
@@ -20,10 +21,15 @@ public class JavaGeneratedClass extends BaseGeneratedClass {
 
     private JavaFile build() {
         TypeSpec.Builder builder = TypeSpec.classBuilder(myName);
+        builder.addJavadoc("Generated code. Don't edit this class");
         builder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
 
-        for (GeneratedVariable field : fields) {
+        for (GeneratedVariable field : myFields) {
             builder.addField(((JavaGeneratedVariable) field).toField());
+        }
+
+        for (GeneratedMethod method : myMethods) {
+            builder.addMethod(((JavaGeneratedMethod) method).toMethod());
         }
 
         return JavaFile.builder(myPackageName, builder.build()).build();

@@ -1,6 +1,7 @@
 package consulo.compiler.apt.shared.generation.impl.kotlin;
 
 import com.squareup.kotlinpoet.ClassName;
+import com.squareup.kotlinpoet.ParameterSpec;
 import com.squareup.kotlinpoet.PropertySpec;
 import consulo.compiler.apt.shared.generation.BaseGeneratedVariable;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
@@ -13,6 +14,12 @@ import consulo.compiler.apt.shared.generation.type.GeneratedType;
 public class KotlinGeneratedVariable extends BaseGeneratedVariable {
     public KotlinGeneratedVariable(GeneratedType type, String name) {
         super(type, name);
+    }
+
+    public ParameterSpec toParameter() {
+        ParameterSpec.Builder builder = ParameterSpec.builder(myName, KotlinGeneratorUtil.toTypeName(myType));
+
+        return builder.build();
     }
 
     public PropertySpec toJvmField() {

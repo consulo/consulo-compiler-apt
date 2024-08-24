@@ -10,7 +10,8 @@ import java.util.List;
 public abstract class BaseGeneratedClass implements GeneratedClass {
     protected final String myPackageName;
     protected final String myName;
-    protected List<GeneratedVariable> fields = new ArrayList<>();
+    protected List<GeneratedVariable> myFields = new ArrayList<>();
+    protected List<GeneratedMethod> myMethods = new ArrayList<>();
 
     public BaseGeneratedClass(String packageName, String name) {
         myPackageName = packageName;
@@ -29,6 +30,11 @@ public abstract class BaseGeneratedClass implements GeneratedClass {
 
     @Override
     public void withFields(List<? extends GeneratedVariable> fields) {
-        this.fields.addAll(fields);
+        myFields.addAll(fields);
+    }
+
+    @Override
+    public void withMethods(List<? extends GeneratedMethod> methods) {
+        myMethods.addAll(methods);
     }
 }

@@ -1,7 +1,12 @@
 package consulo.compiler.apt.shared.generation.impl.kotlin;
 
-import com.squareup.kotlinpoet.*;
+import com.squareup.kotlinpoet.AnnotationSpec;
+import com.squareup.kotlinpoet.ClassName;
+import com.squareup.kotlinpoet.FileSpec;
+import com.squareup.kotlinpoet.TypeSpec;
 import consulo.compiler.apt.shared.generation.BaseGeneratedClass;
+import consulo.compiler.apt.shared.generation.GeneratedMethod;
+import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
 
 import java.io.Writer;
@@ -18,14 +23,27 @@ public class KotlinGeneratedClass extends BaseGeneratedClass {
 
     public FileSpec build() {
         FileSpec.Builder fileSpec = FileSpec.builder(myPackageName, myName);
+        fileSpec.addAnnotation(AnnotationSpec.builder(ClassName.bestGuess("kotlin.Suppress"))
+            .useSiteTarget(AnnotationSpec.UseSiteTarget.FILE)
+            .addMember("%S", "warnings")
+            .build());
+
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(myName);
-        classBuilder.addAnnotation(AnnotationSpec.builder(ClassName.bestGuess("kotlin.Suppress")).addMember("%S", "warnings").build());
+        classBuilder.addKdoc("Generated code. Don't edit this class");
 
         TypeSpec.Builder companion = TypeSpec.companionObjectBuilder();
-        for (GeneratedVariable field : fields) {
+        for (GeneratedVariable field : myFields) {
             KotlinGeneratedVariable kotlinField = (KotlinGeneratedVariable) field;
 
             companion.addProperty(kotlinField.toJvmField());
+        }
+
+        for (GeneratedMethod method : myMethods) {
+            if (method.hasModifier(GeneratedModifier.STATIC)) {
+                KotlinGeneratedMethod kotlinMethod = (KotlinGeneratedMethod) method;
+
+                companion.addFunction(kotlinMethod.toStaticFunc());
+            }
         }
 
         classBuilder.addType(companion.build());

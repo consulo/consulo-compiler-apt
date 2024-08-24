@@ -12,6 +12,8 @@ import java.util.List;
  * @since 2024-08-24
  */
 public class JavaGeneratedExpressionVisitor implements GeneratedExpressionVisitor<CodeBlock> {
+    public static final JavaGeneratedExpressionVisitor INSTANCE = new JavaGeneratedExpressionVisitor();
+
     @Override
     public CodeBlock visitConstantExpression(GeneratedConstantExpression expression) {
         Object value = expression.value();

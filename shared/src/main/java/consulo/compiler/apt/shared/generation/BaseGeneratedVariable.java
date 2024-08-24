@@ -11,7 +11,7 @@ import java.util.List;
  * @author VISTALL
  * @since 2024-08-22
  */
-public class BaseGeneratedVariable implements GeneratedVariable {
+public abstract class BaseGeneratedVariable implements GeneratedVariable {
     protected final GeneratedType myType;
     protected final String myName;
     protected final List<GeneratedModifier> myModifiers = new ArrayList<>();

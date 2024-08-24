@@ -2,6 +2,7 @@ package consulo.compiler.apt.shared.generation.impl.java;
 
 import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
+import consulo.compiler.apt.shared.generation.GeneratedMethod;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
 
@@ -24,5 +25,10 @@ public class JavaGeneratedElementFactory implements GeneratedElementFactory {
     @Override
     public GeneratedVariable newVariable(GeneratedType type, String name) {
         return new JavaGeneratedVariable(type, JavaGeneratorUtil.escapeString(name));
+    }
+
+    @Override
+    public GeneratedMethod newMethod(GeneratedType type, String name) {
+        return new JavaGeneratedMethod(type, name);
     }
 }

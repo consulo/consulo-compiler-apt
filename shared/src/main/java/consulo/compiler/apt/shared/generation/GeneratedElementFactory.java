@@ -1,6 +1,7 @@
 package consulo.compiler.apt.shared.generation;
 
 import consulo.compiler.apt.shared.generation.expression.*;
+import consulo.compiler.apt.shared.generation.statement.GeneratedReturnStatement;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
 
@@ -29,6 +30,8 @@ public interface GeneratedElementFactory {
 
     GeneratedVariable newVariable(GeneratedType type, String name);
 
+    GeneratedMethod newMethod(GeneratedType type, String name);
+
     default GeneratedMethodCallExpression newMethodCallExpression(GeneratedExpression qualifier,
                                                                   String methodName,
                                                                   List<GeneratedExpression> arguments) {
@@ -45,5 +48,9 @@ public interface GeneratedElementFactory {
 
     default GeneratedClassReferenceExpression newClassReferenceExpression(GeneratedClassType type) {
         return new GeneratedClassReferenceExpression(type);
+    }
+
+    default GeneratedReturnStatement newReturnStatement(GeneratedExpression expression) {
+        return new GeneratedReturnStatement(expression);
     }
 }
