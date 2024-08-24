@@ -20,6 +20,7 @@ import consulo.compiler.apt.shared.ComponentScope;
 import consulo.compiler.apt.shared.ConsuloClasses;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
+import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.RoundEnvironment;
@@ -114,6 +115,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
                     providers.computeIfAbsent(injectingBindingClassName, (c) -> new HashSet<>()).add(bindingQualifiedName);
 
                     GeneratedClass generatedClass = factory.newClass(typeElement.getQualifiedName().toString(), typeElement.getSimpleName().toString() + "_Binding");
+                    generatedClass.withSuperInterfaces(List.of(new GeneratedClassType(injectingBindingClassName)));
 
                     TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
                     bindBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);

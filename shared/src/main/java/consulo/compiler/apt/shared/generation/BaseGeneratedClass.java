@@ -1,5 +1,7 @@
 package consulo.compiler.apt.shared.generation;
 
+import consulo.compiler.apt.shared.generation.type.GeneratedType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,12 +12,18 @@ import java.util.List;
 public abstract class BaseGeneratedClass implements GeneratedClass {
     protected final String myPackageName;
     protected final String myName;
-    protected List<GeneratedVariable> myFields = new ArrayList<>();
-    protected List<GeneratedMethod> myMethods = new ArrayList<>();
+    protected final List<GeneratedVariable> myFields = new ArrayList<>();
+    protected final List<GeneratedMethod> myMethods = new ArrayList<>();
+    protected final List<GeneratedType> mySuperInterfaces = new ArrayList<>();
 
     public BaseGeneratedClass(String packageName, String name) {
         myPackageName = packageName;
         myName = name;
+    }
+
+    @Override
+    public void withSuperInterfaces(List<? extends GeneratedType> superInterfaces) {
+        mySuperInterfaces.addAll(superInterfaces);
     }
 
     @Override

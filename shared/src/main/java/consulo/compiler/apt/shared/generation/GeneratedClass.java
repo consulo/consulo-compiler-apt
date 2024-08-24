@@ -1,5 +1,7 @@
 package consulo.compiler.apt.shared.generation;
 
+import consulo.compiler.apt.shared.generation.type.GeneratedType;
+
 import java.io.Writer;
 import java.nio.file.Path;
 import java.util.List;
@@ -12,6 +14,8 @@ public interface GeneratedClass {
     String getPackageName();
 
     String getName();
+
+    void withSuperInterfaces(List<? extends GeneratedType> superInterfaces);
 
     void withFields(List<? extends GeneratedVariable> fields);
 
