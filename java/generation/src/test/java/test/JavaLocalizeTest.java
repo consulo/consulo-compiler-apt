@@ -15,14 +15,14 @@ import java.nio.file.Path;
  * @author VISTALL
  * @since 2024-08-22
  */
-public class KotlinLocalizeTest {
+public class JavaLocalizeTest {
     @Test
     public void testSomeLocalize() throws Exception {
         doTest("test/SomeLocalize.yaml");
     }
 
     private void doTest(String fileName) throws Exception {
-        GeneratedElementFactory factory = GeneratedElementFactory.of("kotlin");
+        GeneratedElementFactory factory = GeneratedElementFactory.of("java");
 
         LocalizeGenerator generator = new LocalizeGenerator(factory);
 
@@ -39,7 +39,7 @@ public class KotlinLocalizeTest {
 
         String value = stringWriter.toString();
 
-        URL expectedResult = getClass().getResource("/" + fileName.replace(".yaml", ".kt"));
+        URL expectedResult = getClass().getResource("/" + fileName.replace(".yaml", ".java"));
 
         Path expected = Path.of(expectedResult.toURI());
 
