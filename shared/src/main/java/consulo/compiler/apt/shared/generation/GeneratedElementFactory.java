@@ -29,13 +29,21 @@ public interface GeneratedElementFactory {
 
     GeneratedVariable newVariable(GeneratedType type, String name);
 
-    GeneratedMethodCallExpression newMethodCallExpression(GeneratedExpression qualifier,
-                                                          String methodName,
-                                                          List<GeneratedExpression> arguments);
+    default GeneratedMethodCallExpression newMethodCallExpression(GeneratedExpression qualifier,
+                                                                  String methodName,
+                                                                  List<GeneratedExpression> arguments) {
+        return new GeneratedMethodCallExpression(qualifier, methodName, arguments);
+    }
 
-    GeneratedConstantExpression newConstantExpression(Object value);
+    default GeneratedConstantExpression newConstantExpression(Object value) {
+        return new GeneratedConstantExpression(value);
+    }
 
-    GeneratedReferenceExpression newReferenceExpression(String reference);
+    default GeneratedReferenceExpression newReferenceExpression(String reference) {
+        return new GeneratedReferenceExpression(reference);
+    }
 
-    GeneratedClassReferenceExpression newClassReferenceExpression(GeneratedClassType type);
+    default GeneratedClassReferenceExpression newClassReferenceExpression(GeneratedClassType type) {
+        return new GeneratedClassReferenceExpression(type);
+    }
 }

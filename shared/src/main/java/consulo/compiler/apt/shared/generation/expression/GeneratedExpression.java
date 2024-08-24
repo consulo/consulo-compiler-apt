@@ -5,4 +5,5 @@ package consulo.compiler.apt.shared.generation.expression;
  * @since 2024-08-22
  */
 public interface GeneratedExpression {
+    <R> R accept(GeneratedExpressionVisitor<R> visitor);
 }

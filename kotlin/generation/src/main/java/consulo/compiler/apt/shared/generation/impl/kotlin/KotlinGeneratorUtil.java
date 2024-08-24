@@ -3,6 +3,7 @@ package consulo.compiler.apt.shared.generation.impl.kotlin;
 import com.squareup.kotlinpoet.ClassName;
 import com.squareup.kotlinpoet.KModifier;
 import com.squareup.kotlinpoet.TypeName;
+import com.squareup.kotlinpoet.TypeNames;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
@@ -14,6 +15,10 @@ import consulo.compiler.apt.shared.generation.type.GeneratedType;
 public class KotlinGeneratorUtil {
     public static TypeName toTypeName(GeneratedType generatedType) {
         if (generatedType instanceof GeneratedClassType classType) {
+            if ("java.lang.String".equals(classType.className())) {
+                return TypeNames.STRING;
+            }
+            
             return ClassName.bestGuess(classType.className());
         }
 

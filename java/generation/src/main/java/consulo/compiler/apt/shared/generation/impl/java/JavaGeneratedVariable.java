@@ -21,9 +21,7 @@ public class JavaGeneratedVariable extends BaseGeneratedVariable {
         }
 
         if (myInitializerExpression != null) {
-            JavaGeneratedExpression javaGeneratedExpression = (JavaGeneratedExpression) myInitializerExpression;
-
-            spec.initializer(javaGeneratedExpression.generate());
+            spec.initializer(myInitializerExpression.accept(new JavaGeneratedExpressionVisitor()));
         }
 
         return spec.build();

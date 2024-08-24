@@ -21,7 +21,15 @@ public class KotlinGeneratedVariable extends BaseGeneratedVariable {
             .filter(modifier -> modifier != GeneratedModifier.STATIC && modifier != GeneratedModifier.FINAL)
             .map(KotlinGeneratorUtil::toModifier)
             .toList());
-        builder.addAnnotation(ClassName.bestGuess("kotlin.jvm.JvmField"));
+
+        // jvm field allows only for public
+        if (myModifiers.contains(GeneratedModifier.PUBLIC)) {
+            builder.addAnnotation(ClassName.bestGuess("kotlin.jvm.JvmField"));
+        }
+
+        if (myInitializerExpression != null) {
+            builder.initializer(myInitializerExpression.accept(new KotlinGeneratedExpressionVisitor()));
+        }
 
         return builder.build();
     }

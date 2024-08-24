@@ -1,7 +1,6 @@
 package consulo.compiler.apt.shared.generation.impl.kotlin;
 
-import com.squareup.kotlinpoet.FileSpec;
-import com.squareup.kotlinpoet.TypeSpec;
+import com.squareup.kotlinpoet.*;
 import consulo.compiler.apt.shared.generation.BaseGeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
 
@@ -20,6 +19,7 @@ public class KotlinGeneratedClass extends BaseGeneratedClass {
     public FileSpec build() {
         FileSpec.Builder fileSpec = FileSpec.builder(myPackageName, myName);
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(myName);
+        classBuilder.addAnnotation(AnnotationSpec.builder(ClassName.bestGuess("kotlin.Suppress")).addMember("%S", "warnings").build());
 
         TypeSpec.Builder companion = TypeSpec.companionObjectBuilder();
         for (GeneratedVariable field : fields) {
