@@ -65,4 +65,20 @@ public interface GeneratedElementFactory {
     default GeneratedReturnStatement newReturnStatement(GeneratedExpression expression) {
         return new GeneratedReturnStatement(expression);
     }
+
+    default GeneratedClassCastExpression newClassCastExpression(GeneratedType type, GeneratedExpression expression) {
+        return new GeneratedClassCastExpression(type, expression);
+    }
+
+    default GeneratedNewExpression newExpression(GeneratedType type, List<GeneratedExpression> arguments) {
+        return new GeneratedNewExpression(type, arguments);
+    }
+
+    default GeneratedArrayGetExpression newArrayGetExpression(GeneratedExpression expression, int index) {
+        return new GeneratedArrayGetExpression(expression, newConstantExpression(index));
+    }
+
+    default GeneratedArrayGetExpression newArrayGetExpression(GeneratedExpression expression, GeneratedExpression in) {
+        return new GeneratedArrayGetExpression(expression, in);
+    }
 }

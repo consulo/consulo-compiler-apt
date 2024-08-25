@@ -193,6 +193,23 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         }
         methods.add(getParameterTypes);
 
+        GeneratedMethod create = f.newMethod(new GeneratedClassType(Object.class), "create");
+        String argsParam = "args";
+        create.withParameters(List.of(f.newVariable(new GeneratedArrayType(new GeneratedClassType(Object.class)), argsParam)));
+        create.withModifiers(GeneratedModifier.PUBLIC);
+        create.withOverride();
+        List<GeneratedExpression> newExpressionArgs = new ArrayList<>();
+
+        if (!injectConstructor.getParameters().isEmpty()) {
+            int index = 0;
+            for (KSValueParameter parameter : injectConstructor.getParameters()) {
+                GeneratedExpression pExpr = f.newArrayGetExpression(f.newReferenceExpression(argsParam), index++);
+                pExpr = f.newClassCastExpression(toType(parameter.getType().resolve()), pExpr);
+                newExpressionArgs.add(pExpr);
+            }
+        }
+        create.withStatement(f.newReturnStatement(f.newExpression(toType(ktClass.asType(List.of())), newExpressionArgs)));
+        methods.add(create);
 
         generatedClass.withMethods(methods);
     }

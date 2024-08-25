@@ -28,6 +28,36 @@ public class KotlinGeneratedExpressionVisitor implements GeneratedExpressionVisi
     }
 
     @Override
+    public CodeBlock visitClassCastExpression(GeneratedClassCastExpression expression) {
+        return CodeBlock.of("%L as %T", expression.expression().accept(this), KotlinGeneratorUtil.toTypeName(expression.type()));
+    }
+
+    @Override
+    public CodeBlock visitNewExpression(GeneratedNewExpression expression) {
+        List<Object> args = new ArrayList<>();
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("%T");
+        args.add(KotlinGeneratorUtil.toTypeName(expression.type()));
+        builder.append("(");
+        for (int i = 0; i < expression.arguments().size(); i++) {
+            if (i != 0) {
+                builder.append(", ");
+            }
+            builder.append("%L");
+
+            args.add(expression.arguments().get(i).accept(this));
+        }
+        builder.append(")");
+        return CodeBlock.of(builder.toString(), args.toArray());
+    }
+
+    @Override
+    public CodeBlock visitArrayGetExpression(GeneratedArrayGetExpression expression) {
+        return CodeBlock.of("%L[%L]", expression.expression().accept(this), expression.in().accept(this));
+    }
+
+    @Override
     public CodeBlock visitNewArrayExpression(GeneratedNewArrayExpression expression) {
         List<GeneratedExpression> expressions = expression.expressions();
         List<Object> arguments = new ArrayList<>(expressions.size());

@@ -32,4 +32,16 @@ public interface GeneratedExpressionVisitor<R> {
     default R visitNewArrayExpression(GeneratedNewArrayExpression expression) {
         throw new UnsupportedOperationException();
     }
+
+    default R visitClassCastExpression(GeneratedClassCastExpression expression) {
+        throw new UnsupportedOperationException();
+    }
+
+    default R visitNewExpression(GeneratedNewExpression expression) {
+        throw new UnsupportedOperationException();
+    }
+
+    default R visitArrayGetExpression(GeneratedArrayGetExpression expression) {
+        throw new UnsupportedOperationException();
+    }
 }
