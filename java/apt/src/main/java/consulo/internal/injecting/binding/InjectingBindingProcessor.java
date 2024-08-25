@@ -16,6 +16,7 @@
 package consulo.internal.injecting.binding;
 
 import com.squareup.javapoet.*;
+import consulo.compiler.apt.shared.ApiImplData;
 import consulo.compiler.apt.shared.ComponentScope;
 import consulo.compiler.apt.shared.ConsuloClasses;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
@@ -43,26 +44,14 @@ import java.util.*;
  * @since 16-Jun-22
  * See https://github.com/google/auto/blob/master/service/processor/src/main/java/com/google/auto/service/processor/AutoServiceProcessor.java
  */
-@SupportedAnnotationTypes({InjectingBindingProcessor.SERVICE_IMPL, InjectingBindingProcessor.EXTENSION_IMPL, InjectingBindingProcessor.TOPIC_IMPL, InjectingBindingProcessor.ACTION_IMPL})
+@SupportedAnnotationTypes({ConsuloClasses.consulo.annotation.component.ServiceImpl,
+    ConsuloClasses.consulo.annotation.component.ExtensionImpl,
+    ConsuloClasses.consulo.annotation.component.TopicImpl,
+    ConsuloClasses.consulo.annotation.component.ActionImpl
+})
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class InjectingBindingProcessor extends BindingProcessor {
     private static record AnnotationResolveInfo(AnnotationMirror annotation, TypeElement typeElement) {
-    }
-
-    public static final String SERVICE_IMPL = ConsuloClasses.consulo.annotation.component.ServiceImpl;
-    public static final String EXTENSION_IMPL = ConsuloClasses.consulo.annotation.component.ExtensionImpl;
-    public static final String TOPIC_IMPL = ConsuloClasses.consulo.annotation.component.TopicImpl;
-    public static final String ACTION_IMPL = ConsuloClasses.consulo.annotation.component.ActionImpl;
-
-    private static final String ACTION_API = ConsuloClasses.consulo.annotation.component.ActionAPI;
-
-    private Map<String, String> myApiAnnotations = new HashMap<>();
-
-    public InjectingBindingProcessor() {
-        myApiAnnotations.put(SERVICE_IMPL, ConsuloClasses.consulo.annotation.component.ServiceAPI);
-        myApiAnnotations.put(EXTENSION_IMPL, ConsuloClasses.consulo.annotation.component.ExtensionAPI);
-        myApiAnnotations.put(TOPIC_IMPL, ConsuloClasses.consulo.annotation.component.TopicAPI);
-        myApiAnnotations.put(ACTION_IMPL, ConsuloClasses.consulo.annotation.component.ActionAPI);
     }
 
     @Override
@@ -89,7 +78,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
 
             String implClassName = annotation.getQualifiedName().toString();
 
-            String apiClassName = myApiAnnotations.get(implClassName);
+            String apiClassName = ApiImplData.getApiAnnotation(implClassName);
             if (apiClassName == null) {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@" + annotation.getQualifiedName() + " not supported");
                 return false;
@@ -314,7 +303,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
         findAnnotationInSuper(typeElement, annotationClass, new HashSet<>(), targets);
 
         // FIXME [VISTALL] this is dirty hack since we have two api annotations
-        if (ACTION_API.equals(annotationClass)) {
+        if (ConsuloClasses.consulo.annotation.component.ActionAPI.equals(annotationClass)) {
             AnnotationResolveInfo actionGroupInfo = null;
             AnnotationResolveInfo actionInfo = null;
 

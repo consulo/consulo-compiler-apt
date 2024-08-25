@@ -8,9 +8,11 @@ import consulo.compiler.apt.shared.generation.BaseGeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedMethod;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
+import consulo.compiler.apt.shared.generation.type.GeneratedType;
 
 import java.io.Writer;
 import java.nio.file.Path;
+import java.util.List;
 
 /**
  * @author VISTALL
@@ -30,12 +32,17 @@ public class KotlinGeneratedClass extends BaseGeneratedClass {
 
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(myName);
         classBuilder.addKdoc("Generated code. Don't edit this class");
+        for (GeneratedType superInterface : mySuperInterfaces) {
+            classBuilder.addSuperinterfaces(List.of(KotlinGeneratorUtil.toTypeName(superInterface)));
+        }
 
+        boolean needCompanion = false;
         TypeSpec.Builder companion = TypeSpec.companionObjectBuilder();
         for (GeneratedVariable field : myFields) {
             KotlinGeneratedVariable kotlinField = (KotlinGeneratedVariable) field;
 
             companion.addProperty(kotlinField.toJvmField());
+            needCompanion = true;
         }
 
         for (GeneratedMethod method : myMethods) {
@@ -43,10 +50,22 @@ public class KotlinGeneratedClass extends BaseGeneratedClass {
                 KotlinGeneratedMethod kotlinMethod = (KotlinGeneratedMethod) method;
 
                 companion.addFunction(kotlinMethod.toStaticFunc());
+                needCompanion= true;
             }
         }
 
-        classBuilder.addType(companion.build());
+        for (GeneratedMethod method : myMethods) {
+            if (!method.hasModifier(GeneratedModifier.STATIC)) {
+                KotlinGeneratedMethod kotlinMethod = (KotlinGeneratedMethod) method;
+
+                classBuilder.addFunction(kotlinMethod.toFunc());
+            }
+        }
+
+        if (needCompanion) {
+            classBuilder.addType(companion.build());
+        }
+        
         fileSpec.addType(classBuilder.build());
         return fileSpec.build();
     }

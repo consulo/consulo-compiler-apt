@@ -22,5 +22,7 @@ public interface GeneratedMethod {
 
     void withStatement(GeneratedStatement statement);
 
+    void withOverride();
+
     boolean hasModifier(GeneratedModifier modifier);
 }

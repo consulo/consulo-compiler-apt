@@ -2,6 +2,7 @@ package consulo.compiler.apt.shared.generation.impl.kotlin;
 
 import com.squareup.kotlinpoet.ClassName;
 import com.squareup.kotlinpoet.FunSpec;
+import com.squareup.kotlinpoet.KModifier;
 import consulo.compiler.apt.shared.generation.BaseGeneratedMethod;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
@@ -16,11 +17,23 @@ public class KotlinGeneratedMethod extends BaseGeneratedMethod {
         super(type, name);
     }
 
+    public FunSpec toFunc() {
+        FunSpec.Builder builder = toFuncImpl();
+        if (withOverride) {
+            builder.addModifiers(KModifier.OVERRIDE);
+        }
+        return builder.build();
+    }
+
     public FunSpec toStaticFunc() {
+        FunSpec.Builder builder = toFuncImpl();
+        builder.addAnnotation(ClassName.bestGuess("kotlin.jvm.JvmStatic"));
+        return builder.build();
+    }
+
+    private FunSpec.Builder toFuncImpl() {
         FunSpec.Builder builder = FunSpec.builder(myName);
         builder.returns(KotlinGeneratorUtil.toTypeName(myType));
-
-        builder.addAnnotation(ClassName.bestGuess("kotlin.jvm.JvmStatic"));
 
         for (GeneratedVariable parameter : myParameters) {
             KotlinGeneratedVariable kotlinVar = (KotlinGeneratedVariable) parameter;
@@ -37,6 +50,6 @@ public class KotlinGeneratedMethod extends BaseGeneratedMethod {
             builder.addCode(myStatement.accept(KotlinGeneratedStatementVisitor.INSTANCE));
         }
 
-        return builder.build();
+        return builder;
     }
 }

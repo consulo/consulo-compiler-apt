@@ -1,6 +1,5 @@
 package consulo.compiler.apt.shared.generation.impl.java;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import consulo.compiler.apt.shared.generation.expression.*;
 
@@ -35,8 +34,12 @@ public class JavaGeneratedExpressionVisitor implements GeneratedExpressionVisito
 
     @Override
     public CodeBlock visitClassReferenceExpression(GeneratedClassReferenceExpression expression) {
-        ClassName className = ClassName.bestGuess(expression.type().className());
-        return CodeBlock.of("$T", className);
+        return CodeBlock.of("$T", JavaGeneratorUtil.toTypeName(expression.type()));
+    }
+
+    @Override
+    public CodeBlock visitClassClassExpression(GeneratedClassClassExpression expression) {
+        return CodeBlock.of("$T.class", JavaGeneratorUtil.toTypeName(expression.type()));
     }
 
     @Override

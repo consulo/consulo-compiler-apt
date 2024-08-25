@@ -50,6 +50,18 @@ public interface GeneratedElementFactory {
         return new GeneratedClassReferenceExpression(type);
     }
 
+    default GeneratedQualifiedExpression newQualifiedExpression(GeneratedExpression qualifier, GeneratedExpression expression) {
+        return new GeneratedQualifiedExpression(qualifier, expression);
+    }
+
+    default GeneratedClassClassExpression newClassClassExpression(GeneratedClassType type) {
+        return new GeneratedClassClassExpression(type);
+    }
+
+    default GeneratedNewArrayExpression newArrayExpression(List<GeneratedExpression> expressions) {
+        return new GeneratedNewArrayExpression(expressions);
+    }
+
     default GeneratedReturnStatement newReturnStatement(GeneratedExpression expression) {
         return new GeneratedReturnStatement(expression);
     }

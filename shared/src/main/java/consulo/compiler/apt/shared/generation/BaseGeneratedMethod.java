@@ -17,10 +17,16 @@ public abstract class BaseGeneratedMethod implements GeneratedMethod {
     protected final List<GeneratedVariable> myParameters = new ArrayList<>();
     protected final List<GeneratedModifier> myModifiers = new ArrayList<>();
     protected GeneratedStatement myStatement;
+    protected boolean withOverride;
 
     public BaseGeneratedMethod(GeneratedType type, String name) {
         myType = type;
         myName = name;
+    }
+
+    @Override
+    public void withOverride() {
+        withOverride = true;
     }
 
     @Override

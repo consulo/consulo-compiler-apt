@@ -12,6 +12,13 @@ public interface ConsuloClasses {
     }
 
     interface consulo {
+        interface component {
+            interface bind {
+                String InjectingBinding = "consulo.component.bind.InjectingBinding";
+                String TopicBinding = "consulo.component.bind.TopicBinding";
+            }
+        }
+
         interface annotation {
             interface component {
                 String ComponentScope = "consulo.annotation.component.ComponentScope";

@@ -1,12 +1,8 @@
 package consulo.compiler.apt.shared.generation.impl.kotlin;
 
-import com.squareup.kotlinpoet.ClassName;
-import com.squareup.kotlinpoet.KModifier;
-import com.squareup.kotlinpoet.TypeName;
-import com.squareup.kotlinpoet.TypeNames;
+import com.squareup.kotlinpoet.*;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
-import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
-import consulo.compiler.apt.shared.generation.type.GeneratedType;
+import consulo.compiler.apt.shared.generation.type.*;
 
 /**
  * @author VISTALL
@@ -22,8 +18,31 @@ public class KotlinGeneratorUtil {
             if ("java.lang.Object".equals(classType.className())) {
                 return TypeNames.ANY;
             }
+
+            if ("int".equals(classType.className())) {
+                return TypeNames.INT;
+            }
+
+            if ("boolean".equals(classType.className())) {
+                return TypeNames.BOOLEAN;
+            }
             
             return ClassName.bestGuess(classType.className());
+        }
+
+        if (generatedType instanceof GeneratedParametizedType parametizedType) {
+            ClassName typeName = (ClassName) toTypeName(parametizedType.rawType());
+            TypeName[] params = parametizedType.argumentTypes().stream().map(KotlinGeneratorUtil::toTypeName).toArray(TypeName[]::new);
+            return ParameterizedTypeName.get(typeName, params);
+        }
+
+        if (generatedType instanceof GeneratedWildcardType) {
+            return WildcardTypeName.producerOf(TypeNames.ANY);
+        }
+
+        if (generatedType instanceof GeneratedArrayType arrayType) {
+            TypeName innerType = toTypeName(arrayType.innerType());
+            return ParameterizedTypeName.get(TypeNames.ARRAY, innerType);
         }
 
         throw new IllegalArgumentException(generatedType.toString());

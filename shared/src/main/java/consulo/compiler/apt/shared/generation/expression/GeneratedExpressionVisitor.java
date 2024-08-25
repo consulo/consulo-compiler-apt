@@ -17,7 +17,19 @@ public interface GeneratedExpressionVisitor<R> {
         throw new UnsupportedOperationException();
     }
 
+    default R visitClassClassExpression(GeneratedClassClassExpression expression) {
+        throw new UnsupportedOperationException();
+    }
+
     default R visitConstantExpression(GeneratedConstantExpression expression) {
+        throw new UnsupportedOperationException();
+    }
+
+    default R visitQualifiedExpression(GeneratedQualifiedExpression expression) {
+        throw new UnsupportedOperationException();
+    }
+
+    default R visitNewArrayExpression(GeneratedNewArrayExpression expression) {
         throw new UnsupportedOperationException();
     }
 }

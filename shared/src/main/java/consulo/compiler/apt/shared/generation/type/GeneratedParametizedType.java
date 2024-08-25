@@ -7,5 +7,4 @@ import java.util.List;
  * @since 2024-08-22
  */
 public record GeneratedParametizedType(GeneratedType rawType, List<GeneratedType> argumentTypes) implements GeneratedType {
-
 }
