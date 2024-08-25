@@ -23,10 +23,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.OutputStreamWriter;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author VISTALL
@@ -34,6 +32,13 @@ import java.util.Objects;
  */
 public class InjectingSymbolProcessor implements SymbolProcessor {
     private record ApiInfo(KSDeclaration declaration, KSAnnotation annotation) {
+    }
+
+    private record ServiceInfo(String qualifiedName, KSFile file) implements Comparable<ServiceInfo> {
+        @Override
+        public int compareTo(ServiceInfo o) {
+            return qualifiedName().compareTo(o.qualifiedName());
+        }
     }
 
     private final CodeGenerator myCodeGenerator;
@@ -51,6 +56,8 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
 
         GeneratedElementFactory factory = GeneratedElementFactory.of("kotlin");
 
+        Map<String, Set<ServiceInfo>> providers = new HashMap<>();
+
         for (Map.Entry<String, String> entry : ApiImplData.getApiAnnotations().entrySet()) {
             String implClass = entry.getKey();
             String apiClass = entry.getValue();
@@ -66,11 +73,19 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
                 if (it instanceof KSClassDeclaration clazz && UtilsKt.validate(clazz, (t, t2) -> true)) {
                     GeneratedClass newClass = factory.newClass(clazz.getPackageName().asString(), clazz.getSimpleName().asString() + "_Binding");
 
+                    String qualifiedName = newClass.getPackageName() + "." + newClass.getName();
+
                     if (ConsuloClasses.consulo.annotation.component.TopicImpl.equals(implClass)) {
                         generateTopicBinding(clazz, newClass, apiClass, implClass, factory);
+
+                        providers.computeIfAbsent(ConsuloClasses.consulo.component.bind.TopicBinding, t -> new TreeSet<>())
+                            .add(new ServiceInfo(qualifiedName, clazz.getContainingFile()));
                     }
                     else {
                         generateInjectingBinding(clazz, newClass, apiClass, implClass, factory);
+
+                        providers.computeIfAbsent(ConsuloClasses.consulo.component.bind.InjectingBinding, t -> new TreeSet<>())
+                            .add(new ServiceInfo(qualifiedName, clazz.getContainingFile()));
                     }
 
                     try (OutputStreamWriter writer = new OutputStreamWriter(myCodeGenerator.createNewFile(new Dependencies(true, clazz.getContainingFile()), newClass.getPackageName(), newClass.getName(), "kt"), StandardCharsets.UTF_8)) {
@@ -85,13 +100,32 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
             });
         }
 
+        for (Map.Entry<String, Set<ServiceInfo>> entry : providers.entrySet()) {
+            String serviceQName = entry.getKey();
+            Set<ServiceInfo> classes = entry.getValue();
+
+            KSFile[] ksFiles = classes.stream().map(ServiceInfo::file).toArray(KSFile[]::new);
+
+            String serviceFile = "META-INF/services/" + serviceQName;
+            Dependencies dependencies = new Dependencies(true, ksFiles);
+
+            String data = classes.stream().map(ServiceInfo::qualifiedName).collect(Collectors.joining(System.lineSeparator()));
+
+            try (OutputStreamWriter writer = new OutputStreamWriter(myCodeGenerator.createNewFile(dependencies, "", serviceFile, ""), StandardCharsets.UTF_8)) {
+                writer.write(data);
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         return result;
     }
 
     private void generateInjectingBinding(KSClassDeclaration ktClass, GeneratedClass generatedClass, String apiClass, String implClass, GeneratedElementFactory f) {
         ApiInfo apiAnnotation = findAnnotationDeep(ktClass, apiClass);
         if (apiAnnotation == null) {
-            throw new IllegalArgumentException("Found find " + apiClass + " in super list");
+            throw new IllegalArgumentException("Found find " + apiClass + " in super list: " + ktClass.getQualifiedName().asString());
         }
 
         KSName qualifiedName = Objects.requireNonNull(ktClass.getQualifiedName());
@@ -238,6 +272,10 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
 
 
         generatedClass.withMethods(methods);
+
+        if (Boolean.TRUE) {
+            throw new UnsupportedOperationException(ktClass.getQualifiedName().asString());
+        }
     }
 
     private KSFunctionDeclaration findInjectConstructor(KSClassDeclaration ktClass) {
@@ -282,9 +320,11 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         for (KSTypeReference reference : SequencesKt.asIterable(annotated.getSuperTypes())) {
             KSDeclaration declaration = reference.resolve().getDeclaration();
 
-            KSAnnotation deepAnnotation = findAnnotation(declaration, annotationClass);
-            if (deepAnnotation != null) {
-                return new ApiInfo(declaration, deepAnnotation);
+            if (declaration instanceof KSClassDeclaration deepClass) {
+                ApiInfo deepAnnotation = findAnnotationDeep(deepClass, annotationClass);
+                if (deepAnnotation != null) {
+                    return deepAnnotation;
+                }
             }
         }
 
