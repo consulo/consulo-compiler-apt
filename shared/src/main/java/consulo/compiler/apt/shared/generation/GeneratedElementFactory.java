@@ -15,7 +15,7 @@ import java.util.ServiceLoader;
  */
 public interface GeneratedElementFactory {
     static GeneratedElementFactory of(String id) {
-        for (GeneratedElementFactory factory : ServiceLoader.load(GeneratedElementFactory.class)) {
+        for (GeneratedElementFactory factory : ServiceLoader.load(GeneratedElementFactory.class, GeneratedElementFactory.class.getClassLoader())) {
             if (Objects.equals(factory.getId(), id)) {
                 return factory;
             }
