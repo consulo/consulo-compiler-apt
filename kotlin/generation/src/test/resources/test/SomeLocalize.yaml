@@ -15,7 +15,13 @@ xdebugger.debugger.tab.title:
 xdebugger.attach.popup.title:
   text: Attach with {0} To
 xdebugger.attach.host.popup.title:
-  text: View {0} processes
+  text: View {0} {1} processes
+  names:
+    - some
+    - aaa
+  types:
+    - int
+    - string?
 xdebugger.attach.toLocal.popup.selectDebugger.title:
   text: Debugger
 xdebugger.attach.toLocal.popup.recent:

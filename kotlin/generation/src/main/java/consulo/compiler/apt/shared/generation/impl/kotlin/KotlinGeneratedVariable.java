@@ -3,9 +3,13 @@ package consulo.compiler.apt.shared.generation.impl.kotlin;
 import com.squareup.kotlinpoet.ClassName;
 import com.squareup.kotlinpoet.ParameterSpec;
 import com.squareup.kotlinpoet.PropertySpec;
+import com.squareup.kotlinpoet.TypeName;
 import consulo.compiler.apt.shared.generation.BaseGeneratedVariable;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
+import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
+
+import java.util.List;
 
 /**
  * @author VISTALL
@@ -17,7 +21,20 @@ public class KotlinGeneratedVariable extends BaseGeneratedVariable {
     }
 
     public ParameterSpec toParameter() {
-        ParameterSpec.Builder builder = ParameterSpec.builder(myName, KotlinGeneratorUtil.toTypeName(myType));
+        TypeName typeName = KotlinGeneratorUtil.toTypeName(myType).copy(true, List.of());
+        // TODO move it to type convertor?
+        if (myType instanceof GeneratedClassType generatedClassType) {
+            switch (generatedClassType.nullability()) {
+                case NON_NULL:
+                    typeName = typeName.copy(false, List.of());
+                    break;
+                case NULLABLE:
+                    typeName = typeName.copy(true, List.of());
+                    break;
+            }
+        }
+
+        ParameterSpec.Builder builder = ParameterSpec.builder(myName, typeName);
 
         return builder.build();
     }

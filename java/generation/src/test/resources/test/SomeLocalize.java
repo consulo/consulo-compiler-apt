@@ -2,6 +2,7 @@ package test.localize;
 
 import consulo.localize.LocalizeKey;
 import consulo.localize.LocalizeValue;
+import jakarta.annotation.Nullable;
 import java.lang.Object;
 import java.lang.String;
 
@@ -27,7 +28,7 @@ public final class SomeLocalize {
 
   private static final LocalizeKey xdebugger_attach_popup_title = LocalizeKey.of(ID, "xdebugger.attach.popup.title", 1);
 
-  private static final LocalizeKey xdebugger_attach_host_popup_title = LocalizeKey.of(ID, "xdebugger.attach.host.popup.title", 1);
+  private static final LocalizeKey xdebugger_attach_host_popup_title = LocalizeKey.of(ID, "xdebugger.attach.host.popup.title", 2);
 
   private static final LocalizeKey xdebugger_attach_tolocal_popup_selectdebugger_title = LocalizeKey.of(ID, "xdebugger.attach.tolocal.popup.selectdebugger.title", 0);
 
@@ -65,8 +66,8 @@ public final class SomeLocalize {
     return xdebugger_attach_popup_title.getValue(arg0);
   }
 
-  public static LocalizeValue xdebuggerAttachHostPopupTitle(Object arg0) {
-    return xdebugger_attach_host_popup_title.getValue(arg0);
+  public static LocalizeValue xdebuggerAttachHostPopupTitle(int some, @Nullable String aaa) {
+    return xdebugger_attach_host_popup_title.getValue(some, aaa);
   }
 
   public static LocalizeValue xdebuggerAttachTolocalPopupSelectdebuggerTitle() {

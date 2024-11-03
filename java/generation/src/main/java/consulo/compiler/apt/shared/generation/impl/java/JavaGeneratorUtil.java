@@ -24,6 +24,11 @@ public class JavaGeneratorUtil {
 
     public static TypeName toTypeName(GeneratedType generatedType) {
         if (generatedType instanceof GeneratedClassType classType) {
+            Class<?> clazz = classType.clazz();
+            if (clazz != null) {
+                return TypeName.get(clazz);
+            }
+
             return ClassName.bestGuess(classType.className());
         }
 

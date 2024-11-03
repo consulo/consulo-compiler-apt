@@ -7,6 +7,7 @@ import consulo.compiler.apt.shared.generation.expression.GeneratedClassReference
 import consulo.compiler.apt.shared.generation.expression.GeneratedExpression;
 import consulo.compiler.apt.shared.generation.expression.GeneratedReferenceExpression;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
+import consulo.compiler.apt.shared.generation.type.Nullability;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.Reader;
@@ -15,16 +16,37 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.Format;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author VISTALL
  * @since 2024-08-22
  */
 public class LocalizeGenerator {
+    private record ParamInfo(String name, Class<?> type, Nullability nullability) {
+    }
+
+    private static final Map<String, Class<?>> typesMap = new HashMap<>();
+
+    static {
+        typesMap.put("string", String.class);
+        typesMap.put("string?", String.class);
+        typesMap.put("byte", byte.class);
+        typesMap.put("byte?", Byte.class);
+        typesMap.put("short", short.class);
+        typesMap.put("short?", Short.class);
+        typesMap.put("int", int.class);
+        typesMap.put("int?", Integer.class);
+        typesMap.put("long", long.class);
+        typesMap.put("long?", Long.class);
+        typesMap.put("float", float.class);
+        typesMap.put("float?", Float.class);
+        typesMap.put("double", double.class);
+        typesMap.put("double?", Double.class);
+        typesMap.put("bool", boolean.class);
+        typesMap.put("bool?", Boolean.class);
+    }
+
     private final GeneratedElementFactory myFactory;
 
     public LocalizeGenerator(GeneratedElementFactory factory) {
@@ -52,14 +74,14 @@ public class LocalizeGenerator {
 
         Yaml yaml = new Yaml();
         try (Reader stream = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-            Map<String, Map<String, String>> o = yaml.load(stream);
+            Map<String, Map<String, Object>> o = yaml.load(stream);
 
-            for (Map.Entry<String, Map<String, String>> entry : o.entrySet()) {
+            for (Map.Entry<String, Map<String, Object>> entry : o.entrySet()) {
                 String key = entry.getKey().toLowerCase(Locale.ROOT);
 
-                Map<String, String> value = entry.getValue();
+                Map<String, Object> value = entry.getValue();
 
-                String t = value.get("text");
+                String t = (String) value.get("text");
                 String text = t == null ? "" : t;
 
                 String fieldName = NameUtil.normalizeName(key.replace(".", "_").replace(" ", "_"));
@@ -94,16 +116,20 @@ public class LocalizeGenerator {
 
                 GeneratedReferenceExpression ref = myFactory.newReferenceExpression(fieldName);
 
-                if (formatsByArgumentIndex.length > 0) {
+                List<ParamInfo> paramInfos = readParams(format, value);
+
+                if (!paramInfos.isEmpty()) {
                     List<GeneratedVariable> params = new ArrayList<>(formatsByArgumentIndex.length);
                     List<GeneratedExpression> callArgs = new ArrayList<>(formatsByArgumentIndex.length);
 
-                    for (int i = 0; i < formatsByArgumentIndex.length; i++) {
-                        String name = "arg" + i;
+                    for (ParamInfo paramInfo : paramInfos) {
+                        callArgs.add(myFactory.newReferenceExpression(paramInfo.name()));
 
-                        callArgs.add(myFactory.newReferenceExpression(name));
+                        GeneratedClassType pType = new GeneratedClassType(paramInfo.type().getName(), paramInfo.type(), paramInfo.nullability());
 
-                        params.add(myFactory.newVariable(new GeneratedClassType(Object.class), name));
+                        GeneratedVariable param = myFactory.newVariable(pType, paramInfo.name());
+
+                        params.add(param);
                     }
 
                     getValueMethod.withStatement(myFactory.newReturnStatement(myFactory.newMethodCallExpression(ref, "getValue", callArgs)));
@@ -111,7 +137,6 @@ public class LocalizeGenerator {
                     getValueMethod.withParameters(params);
                 }
                 else {
-
                     getValueMethod.withStatement(myFactory.newReturnStatement(myFactory.newMethodCallExpression(ref, "getValue", List.of())));
                 }
             }
@@ -124,5 +149,47 @@ public class LocalizeGenerator {
         generatedClass.withFields(fields);
         generatedClass.withMethods(methods);
         return generatedClass;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<ParamInfo> readParams(MessageFormat format, Map<String, Object> data) {
+        Format[] formats = format.getFormatsByArgumentIndex();
+        if (formats.length == 0) {
+            return List.of();
+        }
+
+        List<String> types = (List<String>) data.get("types");
+        List<String> names = (List<String>) data.get("names");
+
+        List<ParamInfo> paramInfos = new ArrayList<>(formats.length);
+        for (int i = 0; i < formats.length; i++) {
+            Class<?> typeClass = Object.class;
+            String name = "arg" + i;
+            Nullability nullability = Nullability.UNSURE;
+
+            if (names != null && i < names.size()) {
+                name = names.get(i);
+            }
+
+            if (types != null && i < types.size()) {
+                String typeStr = types.get(i);
+
+                Class<?> aClass = typesMap.get(typeStr);
+                if (aClass == null) {
+                    throw new IllegalArgumentException("Wrong type " + typeStr);
+                }
+
+                typeClass = aClass;
+                if (typeStr.endsWith("?")) {
+                    nullability = Nullability.NULLABLE;
+                }
+                else {
+                    nullability = Nullability.NON_NULL;
+                }
+            }
+
+            paramInfos.add(new ParamInfo(name, typeClass, nullability));
+        }
+        return paramInfos;
     }
 }

@@ -5,6 +5,7 @@ package test.localize
 import consulo.localize.LocalizeKey
 import consulo.localize.LocalizeValue
 import kotlin.Any
+import kotlin.Int
 import kotlin.String
 import kotlin.Suppress
 import kotlin.jvm.JvmField
@@ -43,7 +44,7 @@ public class SomeLocalize {
         "xdebugger.attach.popup.title", 1)
 
     private val xdebugger_attach_host_popup_title: LocalizeKey = LocalizeKey.of(ID,
-        "xdebugger.attach.host.popup.title", 1)
+        "xdebugger.attach.host.popup.title", 2)
 
     private val xdebugger_attach_tolocal_popup_selectdebugger_title: LocalizeKey =
         LocalizeKey.of(ID, "xdebugger.attach.tolocal.popup.selectdebugger.title", 0)
@@ -78,12 +79,12 @@ public class SomeLocalize {
     public fun xdebuggerDebuggerTabTitle(): LocalizeValue = xdebugger_debugger_tab_title.getValue()
 
     @JvmStatic
-    public fun xdebuggerAttachPopupTitle(arg0: Any): LocalizeValue =
+    public fun xdebuggerAttachPopupTitle(arg0: Any?): LocalizeValue =
         xdebugger_attach_popup_title.getValue(arg0)
 
     @JvmStatic
-    public fun xdebuggerAttachHostPopupTitle(arg0: Any): LocalizeValue =
-        xdebugger_attach_host_popup_title.getValue(arg0)
+    public fun xdebuggerAttachHostPopupTitle(some: Int, aaa: String?): LocalizeValue =
+        xdebugger_attach_host_popup_title.getValue(some, aaa)
 
     @JvmStatic
     public fun xdebuggerAttachTolocalPopupSelectdebuggerTitle(): LocalizeValue =
