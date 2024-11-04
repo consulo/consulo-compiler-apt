@@ -79,7 +79,7 @@ public class SomeLocalize {
     public fun xdebuggerDebuggerTabTitle(): LocalizeValue = xdebugger_debugger_tab_title.getValue()
 
     @JvmStatic
-    public fun xdebuggerAttachPopupTitle(arg0: Any?): LocalizeValue =
+    public fun xdebuggerAttachPopupTitle(arg0: Any): LocalizeValue =
         xdebugger_attach_popup_title.getValue(arg0)
 
     @JvmStatic
