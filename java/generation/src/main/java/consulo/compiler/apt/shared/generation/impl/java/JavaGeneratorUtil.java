@@ -5,6 +5,7 @@ import com.squareup.javapoet.TypeName;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
+import consulo.compiler.apt.shared.generation.type.GeneratedTypeWithNullability;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Modifier;
@@ -23,6 +24,10 @@ public class JavaGeneratorUtil {
     }
 
     public static TypeName toTypeName(GeneratedType generatedType) {
+        if (generatedType instanceof GeneratedTypeWithNullability delegate) {
+            return toTypeName(delegate.type());
+        }
+
         if (generatedType instanceof GeneratedClassType classType) {
             Class<?> clazz = classType.clazz();
             if (clazz != null) {

@@ -11,10 +11,7 @@ import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 import consulo.compiler.apt.shared.generation.GeneratedMethod;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.expression.GeneratedExpression;
-import consulo.compiler.apt.shared.generation.type.GeneratedArrayType;
-import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
-import consulo.compiler.apt.shared.generation.type.GeneratedParametizedType;
-import consulo.compiler.apt.shared.generation.type.GeneratedWildcardType;
+import consulo.compiler.apt.shared.generation.type.*;
 import kotlin.Unit;
 import kotlin.sequences.Sequence;
 import kotlin.sequences.SequencesKt;
@@ -229,7 +226,8 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
 
         GeneratedMethod create = f.newMethod(new GeneratedClassType(Object.class), "create");
         String argsParam = "args";
-        create.withParameters(List.of(f.newVariable(new GeneratedArrayType(new GeneratedClassType(Object.class)), argsParam)));
+        GeneratedArrayType argsType = new GeneratedArrayType(new GeneratedClassType(Object.class));
+        create.withParameters(List.of(f.newVariable(new GeneratedTypeWithNullability(argsType, GeneratedNullability.NON_NULL), argsParam)));
         create.withModifiers(GeneratedModifier.PUBLIC);
         create.withOverride();
         List<GeneratedExpression> newExpressionArgs = new ArrayList<>();

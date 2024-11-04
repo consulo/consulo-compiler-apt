@@ -7,7 +7,9 @@ import consulo.compiler.apt.shared.generation.expression.GeneratedClassReference
 import consulo.compiler.apt.shared.generation.expression.GeneratedExpression;
 import consulo.compiler.apt.shared.generation.expression.GeneratedReferenceExpression;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
-import consulo.compiler.apt.shared.generation.type.Nullability;
+import consulo.compiler.apt.shared.generation.type.GeneratedNullability;
+import consulo.compiler.apt.shared.generation.type.GeneratedType;
+import consulo.compiler.apt.shared.generation.type.GeneratedTypeWithNullability;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.Reader;
@@ -23,7 +25,7 @@ import java.util.*;
  * @since 2024-08-22
  */
 public class LocalizeGenerator {
-    private record ParamInfo(String name, Class<?> type, Nullability nullability) {
+    private record ParamInfo(String name, GeneratedType type) {
     }
 
     private static final Map<String, Class<?>> typesMap = new HashMap<>();
@@ -125,9 +127,7 @@ public class LocalizeGenerator {
                     for (ParamInfo paramInfo : paramInfos) {
                         callArgs.add(myFactory.newReferenceExpression(paramInfo.name()));
 
-                        GeneratedClassType pType = new GeneratedClassType(paramInfo.type().getName(), paramInfo.type(), paramInfo.nullability());
-
-                        GeneratedVariable param = myFactory.newVariable(pType, paramInfo.name());
+                        GeneratedVariable param = myFactory.newVariable(paramInfo.type(), paramInfo.name());
 
                         params.add(param);
                     }
@@ -165,7 +165,7 @@ public class LocalizeGenerator {
         for (int i = 0; i < formats.length; i++) {
             Class<?> typeClass = Object.class;
             String name = "arg" + i;
-            Nullability nullability = Nullability.UNSURE;
+            GeneratedNullability nullability = GeneratedNullability.NON_NULL;
 
             if (names != null && i < names.size()) {
                 name = names.get(i);
@@ -181,14 +181,16 @@ public class LocalizeGenerator {
 
                 typeClass = aClass;
                 if (typeStr.endsWith("?")) {
-                    nullability = Nullability.NULLABLE;
+                    nullability = GeneratedNullability.NULLABLE;
                 }
                 else {
-                    nullability = Nullability.NON_NULL;
+                    nullability = GeneratedNullability.NON_NULL;
                 }
             }
 
-            paramInfos.add(new ParamInfo(name, typeClass, nullability));
+            GeneratedType type = new GeneratedClassType(typeClass);
+
+            paramInfos.add(new ParamInfo(name, new GeneratedTypeWithNullability(type, nullability)));
         }
         return paramInfos;
     }

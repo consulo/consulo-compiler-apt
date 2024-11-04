@@ -4,12 +4,28 @@ import com.squareup.kotlinpoet.*;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.type.*;
 
+import java.util.List;
+
 /**
  * @author VISTALL
  * @since 2024-08-22
  */
 public class KotlinGeneratorUtil {
     public static TypeName toTypeName(GeneratedType generatedType) {
+        if (generatedType instanceof GeneratedTypeWithNullability typeWithNullability) {
+            TypeName name = toTypeName(typeWithNullability.type());
+
+            switch (typeWithNullability.nullability()) {
+                case UNSURE:
+                case NULLABLE:
+                    return name.copy(true, List.of());
+                case NON_NULL:
+                    return name.copy(false, List.of());
+            }
+
+            return name;
+        }
+
         if (generatedType instanceof GeneratedClassType classType) {
             if ("java.lang.String".equals(classType.className())) {
                 return TypeNames.STRING;
@@ -26,7 +42,7 @@ public class KotlinGeneratorUtil {
             if ("boolean".equals(classType.className())) {
                 return TypeNames.BOOLEAN;
             }
-            
+
             return ClassName.bestGuess(classType.className());
         }
 

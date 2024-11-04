@@ -21,18 +21,7 @@ public class KotlinGeneratedVariable extends BaseGeneratedVariable {
     }
 
     public ParameterSpec toParameter() {
-        TypeName typeName = KotlinGeneratorUtil.toTypeName(myType).copy(true, List.of());
-        // TODO move it to type convertor?
-        if (myType instanceof GeneratedClassType generatedClassType) {
-            switch (generatedClassType.nullability()) {
-                case NON_NULL:
-                    typeName = typeName.copy(false, List.of());
-                    break;
-                case NULLABLE:
-                    typeName = typeName.copy(true, List.of());
-                    break;
-            }
-        }
+        TypeName typeName = KotlinGeneratorUtil.toTypeName(myType);
 
         ParameterSpec.Builder builder = ParameterSpec.builder(myName, typeName);
 
