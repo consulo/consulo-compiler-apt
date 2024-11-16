@@ -14,6 +14,11 @@ import java.util.ServiceLoader;
  * @since 2024-08-22
  */
 public interface GeneratedElementFactory {
+    static GeneratedElementFactory first() {
+        ServiceLoader<GeneratedElementFactory> loader = ServiceLoader.load(GeneratedElementFactory.class, GeneratedElementFactory.class.getClassLoader());
+        return loader.findFirst().orElseThrow(() -> new IllegalArgumentException("There no GeneratedElementFactory"));
+    }
+
     static GeneratedElementFactory of(String id) {
         for (GeneratedElementFactory factory : ServiceLoader.load(GeneratedElementFactory.class, GeneratedElementFactory.class.getClassLoader())) {
             if (Objects.equals(factory.getId(), id)) {
