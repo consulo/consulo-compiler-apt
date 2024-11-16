@@ -55,11 +55,15 @@ public class LocalizeGenerator {
         myFactory = factory;
     }
 
-    public GeneratedClass parse(String relativePath, Path file) throws GenerationException {
+    public GeneratedClass parseRelative(String relativePath, Path file) throws GenerationException {
         String pathWithoutExpresion = NameUtil.getNameWithoutExtension(relativePath).replace("/", ".");
+        return parse(pathWithoutExpresion, file);
+    }
 
-        String pluginId = NameUtil.getPackageName(pathWithoutExpresion);
-        String localizeId = NameUtil.getShortName(pathWithoutExpresion);
+    public GeneratedClass parse(String localizeFileName, Path file) throws GenerationException {
+
+        String pluginId = NameUtil.getPackageName(localizeFileName);
+        String localizeId = NameUtil.getShortName(localizeFileName);
 
         String packageName = pluginId + ".localize";
 

@@ -30,7 +30,7 @@ public class JavaLocalizeTest {
 
         Path target = Path.of(resource.toURI());
 
-        GeneratedClass generatedClass = generator.parse(fileName, target);
+        GeneratedClass generatedClass = generator.parseRelative(fileName, target);
 
         StringWriter stringWriter = new StringWriter();
         try (stringWriter) {
