@@ -25,6 +25,9 @@ import java.util.*;
  * @since 2024-08-22
  */
 public class LocalizeGenerator {
+    public record SubFile(List<String> parts, Path filePath) {
+    }
+
     private record ParamInfo(String name, GeneratedType type) {
     }
 
@@ -61,6 +64,10 @@ public class LocalizeGenerator {
     }
 
     public GeneratedClass parse(String localizeFileName, Path file) throws GenerationException {
+        return parse(localizeFileName, file, Set.of());
+    }
+
+    public GeneratedClass parse(String localizeFileName, Path file, Set<SubFile> parts) throws GenerationException {
 
         String pluginId = NameUtil.getPackageName(localizeFileName);
         String localizeId = NameUtil.getShortName(localizeFileName);
@@ -84,65 +91,13 @@ public class LocalizeGenerator {
 
             for (Map.Entry<String, Map<String, Object>> entry : o.entrySet()) {
                 String key = entry.getKey().toLowerCase(Locale.ROOT);
-
                 Map<String, Object> value = entry.getValue();
+                buildFile(idField, fields, methods, localizeKey, localizeValue, value, key);
+            }
 
-                String t = (String) value.get("text");
-                String text = t == null ? "" : t;
-
-                String fieldName = NameUtil.normalizeName(key.replace(".", "_").replace(" ", "_"));
-
-                MessageFormat format;
-                try {
-                    format = new MessageFormat(text);
-                }
-                catch (Exception e) {
-                    throw new GenerationException("Failed to parse text: " + text, e);
-                }
-
-                Format[] formatsByArgumentIndex = format.getFormatsByArgumentIndex();
-
-                GeneratedVariable keyField = myFactory.newVariable(localizeKey, fieldName);
-                fields.add(keyField);
-                keyField.withModifiers(GeneratedModifier.PRIVATE, GeneratedModifier.STATIC, GeneratedModifier.FINAL);
-
-                List<GeneratedExpression> ofArguments = new ArrayList<>(3);
-                ofArguments.add(myFactory.newReferenceExpression(idField.getName()));// ref;
-                ofArguments.add(myFactory.newConstantExpression(key));
-                ofArguments.add(myFactory.newConstantExpression(formatsByArgumentIndex.length));
-
-                GeneratedClassReferenceExpression localizeKeyClass = myFactory.newClassReferenceExpression(localizeKey);
-                keyField.withInitializer(myFactory.newMethodCallExpression(localizeKeyClass, "of", ofArguments));
-
-                String methodName = NameUtil.normalizeName(NameUtil.captilizeByDot(key));
-
-                GeneratedMethod getValueMethod = myFactory.newMethod(localizeValue, methodName);
-                getValueMethod.withModifiers(GeneratedModifier.PUBLIC, GeneratedModifier.STATIC);
-                methods.add(getValueMethod);
-
-                GeneratedReferenceExpression ref = myFactory.newReferenceExpression(fieldName);
-
-                List<ParamInfo> paramInfos = readParams(format, value);
-
-                if (!paramInfos.isEmpty()) {
-                    List<GeneratedVariable> params = new ArrayList<>(formatsByArgumentIndex.length);
-                    List<GeneratedExpression> callArgs = new ArrayList<>(formatsByArgumentIndex.length);
-
-                    for (ParamInfo paramInfo : paramInfos) {
-                        callArgs.add(myFactory.newReferenceExpression(paramInfo.name()));
-
-                        GeneratedVariable param = myFactory.newVariable(paramInfo.type(), paramInfo.name());
-
-                        params.add(param);
-                    }
-
-                    getValueMethod.withStatement(myFactory.newReturnStatement(myFactory.newMethodCallExpression(ref, "getValue", callArgs)));
-
-                    getValueMethod.withParameters(params);
-                }
-                else {
-                    getValueMethod.withStatement(myFactory.newReturnStatement(myFactory.newMethodCallExpression(ref, "getValue", List.of())));
-                }
+            for (SubFile part : parts) {
+                String key = String.join(".", part.parts()).toLowerCase(Locale.ROOT);
+                buildFile(idField, fields, methods, localizeKey, localizeValue, Map.of("text", ""), key);
             }
         }
         catch (Exception e) {
@@ -153,6 +108,71 @@ public class LocalizeGenerator {
         generatedClass.withFields(fields);
         generatedClass.withMethods(methods);
         return generatedClass;
+    }
+
+    private void buildFile(GeneratedVariable idField,
+                           List<GeneratedVariable> fields,
+                           List<GeneratedMethod> methods,
+                           GeneratedClassType localizeKey,
+                           GeneratedClassType localizeValue,
+                           Map<String, Object> dataMap,
+                           String key) throws GenerationException {
+        String t = (String) dataMap.get("text");
+        String text = t == null ? "" : t;
+
+        String fieldName = NameUtil.normalizeName(key.replace(".", "_").replace(" ", "_"));
+
+        MessageFormat format;
+        try {
+            format = new MessageFormat(text);
+        }
+        catch (Exception e) {
+            throw new GenerationException("Failed to parse text: " + text, e);
+        }
+
+        Format[] formatsByArgumentIndex = format.getFormatsByArgumentIndex();
+
+        GeneratedVariable keyField = myFactory.newVariable(localizeKey, fieldName);
+        fields.add(keyField);
+        keyField.withModifiers(GeneratedModifier.PRIVATE, GeneratedModifier.STATIC, GeneratedModifier.FINAL);
+
+        List<GeneratedExpression> ofArguments = new ArrayList<>(3);
+        ofArguments.add(myFactory.newReferenceExpression(idField.getName()));// ref;
+        ofArguments.add(myFactory.newConstantExpression(key));
+        ofArguments.add(myFactory.newConstantExpression(formatsByArgumentIndex.length));
+
+        GeneratedClassReferenceExpression localizeKeyClass = myFactory.newClassReferenceExpression(localizeKey);
+        keyField.withInitializer(myFactory.newMethodCallExpression(localizeKeyClass, "of", ofArguments));
+
+        String methodName = NameUtil.normalizeName(NameUtil.captilizeByDot(key));
+
+        GeneratedMethod getValueMethod = myFactory.newMethod(localizeValue, methodName);
+        getValueMethod.withModifiers(GeneratedModifier.PUBLIC, GeneratedModifier.STATIC);
+        methods.add(getValueMethod);
+
+        GeneratedReferenceExpression ref = myFactory.newReferenceExpression(fieldName);
+
+        List<ParamInfo> paramInfos = readParams(format, dataMap);
+
+        if (!paramInfos.isEmpty()) {
+            List<GeneratedVariable> params = new ArrayList<>(formatsByArgumentIndex.length);
+            List<GeneratedExpression> callArgs = new ArrayList<>(formatsByArgumentIndex.length);
+
+            for (ParamInfo paramInfo : paramInfos) {
+                callArgs.add(myFactory.newReferenceExpression(paramInfo.name()));
+
+                GeneratedVariable param = myFactory.newVariable(paramInfo.type(), paramInfo.name());
+
+                params.add(param);
+            }
+
+            getValueMethod.withStatement(myFactory.newReturnStatement(myFactory.newMethodCallExpression(ref, "getValue", callArgs)));
+
+            getValueMethod.withParameters(params);
+        }
+        else {
+            getValueMethod.withStatement(myFactory.newReturnStatement(myFactory.newMethodCallExpression(ref, "getValue", List.of())));
+        }
     }
 
     @SuppressWarnings("unchecked")
