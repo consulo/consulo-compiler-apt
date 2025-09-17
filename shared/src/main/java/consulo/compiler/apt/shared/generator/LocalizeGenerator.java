@@ -88,6 +88,9 @@ public class LocalizeGenerator {
         Yaml yaml = new Yaml();
         try (Reader stream = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             Map<String, Map<String, Object>> o = yaml.load(stream);
+            if (o == null) {
+                throw new IllegalArgumentException("File is empty");
+            }
 
             for (Map.Entry<String, Map<String, Object>> entry : o.entrySet()) {
                 String key = entry.getKey().toLowerCase(Locale.ROOT);
@@ -101,7 +104,7 @@ public class LocalizeGenerator {
             }
         }
         catch (Exception e) {
-            throw new GenerationException(e.getMessage(), e);
+            throw new GenerationException("Failed to parse: " + file, e);
         }
 
         GeneratedClass generatedClass = myFactory.newClass(packageName, localizeId);
