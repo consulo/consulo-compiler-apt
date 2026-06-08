@@ -5,6 +5,8 @@
 module compiler.apt.shared {
     requires org.yaml.snakeyaml;
 
+    requires com.ibm.icu;
+
     exports consulo.compiler.apt.shared;
     exports consulo.compiler.apt.shared.generation;
     exports consulo.compiler.apt.shared.generation.type;

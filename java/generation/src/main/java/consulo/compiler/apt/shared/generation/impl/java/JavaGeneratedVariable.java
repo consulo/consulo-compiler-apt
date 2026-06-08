@@ -1,8 +1,6 @@
 package consulo.compiler.apt.shared.generation.impl.java;
 
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.*;
 import consulo.compiler.apt.shared.generation.BaseGeneratedVariable;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
@@ -19,26 +17,21 @@ public class JavaGeneratedVariable extends BaseGeneratedVariable {
     }
 
     public ParameterSpec toParameter() {
-        ParameterSpec.Builder spec = ParameterSpec.builder(JavaGeneratorUtil.toTypeName(myType), myName);
+        TypeName type = JavaGeneratorUtil.toTypeName(myType);
 
         if (myType instanceof GeneratedTypeWithNullability typeWithNullability) {
             switch (typeWithNullability.nullability()) {
                 case NON_NULL:
-                    Class<?> clazz = null;
-                    GeneratedType type = typeWithNullability.type();
-                    if (type instanceof GeneratedClassType generatedClassType) {
-                        clazz = generatedClassType.clazz();
-                    }
-
-                    if (clazz == null || !clazz.isPrimitive()) {
-                        spec.addAnnotation(ClassName.bestGuess("jakarta.annotation.Nonnull"));
-                    }
+                    // by default all types is nullable
                     break;
                 case NULLABLE:
-                    spec.addAnnotation(ClassName.bestGuess("jakarta.annotation.Nullable"));
+                    type = type.annotated(AnnotationSpec.builder(ClassName.get("org.jspecify.annotations", "Nullable")).build());
                     break;
             }
         }
+
+        ParameterSpec.Builder spec = ParameterSpec.builder(type, myName);
+
         return spec.build();
     }
 

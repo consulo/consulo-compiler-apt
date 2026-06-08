@@ -1,5 +1,6 @@
 package consulo.compiler.apt.shared.generator;
 
+import com.ibm.icu.text.MessageFormat;
 import consulo.compiler.apt.shared.GenerationException;
 import consulo.compiler.apt.shared.NameUtil;
 import consulo.compiler.apt.shared.generation.*;
@@ -17,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.Format;
-import java.text.MessageFormat;
 import java.util.*;
 
 /**

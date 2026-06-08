@@ -2,10 +2,9 @@ package test.localize;
 
 import consulo.localize.LocalizeKey;
 import consulo.localize.LocalizeValue;
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import java.lang.Object;
 import java.lang.String;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Generated code. Don't edit this class
@@ -63,7 +62,7 @@ public final class SomeLocalize {
     return xdebugger_debugger_tab_title.getValue();
   }
 
-  public static LocalizeValue xdebuggerAttachPopupTitle(@Nonnull Object arg0) {
+  public static LocalizeValue xdebuggerAttachPopupTitle(Object arg0) {
     return xdebugger_attach_popup_title.getValue(arg0);
   }
 
