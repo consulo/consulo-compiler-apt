@@ -41,7 +41,7 @@ import java.util.*;
 
 /**
  * @author VISTALL
- * @since 16-Jun-22
+ * @since 2022-06-16
  * See https://github.com/google/auto/blob/master/service/processor/src/main/java/com/google/auto/service/processor/AutoServiceProcessor.java
  */
 @SupportedAnnotationTypes({ConsuloClasses.consulo.annotation.component.ServiceImpl,
@@ -49,7 +49,7 @@ import java.util.*;
     ConsuloClasses.consulo.annotation.component.TopicImpl,
     ConsuloClasses.consulo.annotation.component.ActionImpl
 })
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedSourceVersion(SourceVersion.RELEASE_25)
 public class InjectingBindingProcessor extends BindingProcessor {
     private static record AnnotationResolveInfo(AnnotationMirror annotation, TypeElement typeElement) {
     }
