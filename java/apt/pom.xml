@@ -46,8 +46,8 @@
                     <compilerArgument>
                         -proc:none
                     </compilerArgument>
-                    <source>21</source>
-                    <target>21</target>
+                    <source>25</source>
+                    <target>25</target>
                     <showDeprecation>true</showDeprecation>
                     <showWarnings>true</showWarnings>
                 </configuration>
@@ -57,7 +57,7 @@
 
     <groupId>consulo.internal</groupId>
     <artifactId>compiler.apt.java</artifactId>
-    <version>3.0</version>
+    <version>4.0</version>
     <packaging>jar</packaging>
 
     <dependencies>

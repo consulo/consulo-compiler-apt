@@ -34,170 +34,178 @@ import java.util.*;
 
 /**
  * @author VISTALL
- * @since 25/01/2023
+ * @since 2023-01-25
  */
 @SupportedAnnotationTypes({TopicBindingProcessor.TOPIC_API})
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedSourceVersion(SourceVersion.RELEASE_25)
 public class TopicBindingProcessor extends BindingProcessor {
-  public static final String TOPIC_API = "consulo.annotation.component.TopicAPI";
+    public static final String TOPIC_API = "consulo.annotation.component.TopicAPI";
 
-  private record TopicMethodInfo(String name, AppendTypeResult types) {
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    if (annotations.isEmpty()) {
-      return true;
+    private record TopicMethodInfo(String name, AppendTypeResult types) {
     }
 
-    AnnotationSpec suppressWarning = AnnotationSpec.builder(SuppressWarnings.class).addMember("value", CodeBlock.of("$S", "ALL")).build();
-
-    Filer filer = processingEnv.getFiler();
-
-    Map<String, Set<String>> providers = new HashMap<>();
-
-    String topicBindingClassName = "consulo.component.bind.TopicBinding";
-    ClassName topicBindingClass = ClassName.bestGuess(topicBindingClassName);
-
-    ClassName topicMethod = ClassName.bestGuess("consulo.component.bind.TopicMethod");
-
-    for (TypeElement annotation : annotations) {
-      Set<? extends Element> elementsAnnotatedWith = roundEnv.getElementsAnnotatedWith(annotation);
-
-      for (Element element : elementsAnnotatedWith) {
-        if (!(element instanceof TypeElement)) {
-          continue;
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (annotations.isEmpty()) {
+            return true;
         }
 
-        TypeElement typeElement = (TypeElement)element;
+        AnnotationSpec suppressWarning = AnnotationSpec.builder(SuppressWarnings.class)
+            .addMember("value", CodeBlock.of("$S", "ALL"))
+            .build();
 
-        if (typeElement.getKind() != ElementKind.INTERFACE) {
-          error(typeElement.getQualifiedName() + " must be interface", typeElement, null);
-          return false;
+        Filer filer = processingEnv.getFiler();
+
+        Map<String, Set<String>> providers = new HashMap<>();
+
+        String topicBindingClassName = "consulo.component.bind.TopicBinding";
+        ClassName topicBindingClass = ClassName.bestGuess(topicBindingClassName);
+
+        ClassName topicMethod = ClassName.bestGuess("consulo.component.bind.TopicMethod");
+
+        for (TypeElement annotation : annotations) {
+            Set<? extends Element> elementsAnnotatedWith = roundEnv.getElementsAnnotatedWith(annotation);
+
+            for (Element element : elementsAnnotatedWith) {
+                if (!(element instanceof TypeElement typeElement)) {
+                    continue;
+                }
+
+                if (typeElement.getKind() != ElementKind.INTERFACE) {
+                    error(typeElement.getQualifiedName() + " must be interface", typeElement, null);
+                    return false;
+                }
+
+                try {
+                    String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
+                    JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
+
+                    providers.computeIfAbsent(topicBindingClassName, (c) -> new HashSet<>()).add(bindingQualifiedName);
+
+                    TypeName topicClassRef = TypeName.get(typeElement.asType());
+
+                    TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
+                    bindBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
+                    bindBuilder.addAnnotation(suppressWarning);
+                    bindBuilder.addSuperinterface(topicBindingClass);
+
+                    List<TopicMethodInfo> methods = new ArrayList<>();
+                    List<? extends Element> allMembers = processingEnv.getElementUtils().getAllMembers(typeElement);
+                    for (Element member : allMembers) {
+                        if (!(member instanceof ExecutableElement executableElement)) {
+                            continue;
+                        }
+                        Element enclosingElement = executableElement.getEnclosingElement();
+                        if (enclosingElement != element) {
+                            continue;
+                        }
+
+                        TypeMirror returnType = executableElement.getReturnType();
+                        if (!isVoid(returnType)) {
+                            error(
+                                typeElement.getQualifiedName() + "." + executableElement.getSimpleName() + " must return void",
+                                typeElement,
+                                null
+                            );
+                            return false;
+                        }
+
+                        List<TypeName> paramTypes = new ArrayList<>();
+
+                        AppendTypeResult types = appendTypes(executableElement.getParameters(), paramTypes, "", "", false);
+
+                        methods.add(new TopicMethodInfo(member.getSimpleName().toString(), types));
+                    }
+
+                    if (methods.isEmpty()) {
+                        error(typeElement.getQualifiedName() + " no methods for call", typeElement, null);
+                        return false;
+                    }
+
+                    bindBuilder.addMethod(
+                        MethodSpec.methodBuilder("getApiClassName")
+                            .returns(String.class)
+                            .addModifiers(Modifier.PUBLIC)
+                            .addCode(CodeBlock.of("return $S;", typeElement.getQualifiedName().toString()))
+                            .build());
+
+                    List<Object> methodsArgs = new ArrayList<>();
+                    methodsArgs.add(ArrayTypeName.of(topicMethod));
+
+                    StringBuilder methodsBuilder = new StringBuilder();
+                    methodsBuilder.append("return new $T {\n");
+
+                    for (int i = 0, n = methods.size(); i < n; i++) {
+                        if (i != 0) {
+                            methodsBuilder.append(",\n");
+                        }
+
+                        TopicMethodInfo topicMethodInfo = methods.get(i);
+
+                        methodsBuilder.append("$T.create($S, ");
+                        methodsArgs.add(topicMethod);
+                        methodsArgs.add(topicMethodInfo.name());
+
+                        AppendTypeResult types = topicMethodInfo.types();
+                        if (types.argsCount() == 0) {
+                            methodsBuilder.append("EMPTY_TYPES");
+                        }
+                        else {
+                            methodsBuilder.append(types.result());
+                            methodsArgs.addAll(types.types());
+                        }
+
+                        methodsBuilder.append(", (o, args) -> (($T) o).$L(");
+
+                        methodsArgs.add(topicClassRef);
+                        methodsArgs.add(topicMethodInfo.name());
+
+                        for (int a = 0; a < types.argsCount(); a++) {
+                            if (a != 0) {
+                                methodsBuilder.append(", ");
+                            }
+
+                            methodsBuilder.append("($T) args[").append(a).append("]");
+                            methodsArgs.add(types.args().get(a));
+                        }
+
+                        methodsBuilder.append(")");
+
+                        methodsBuilder.append(")");
+                    }
+
+                    methodsBuilder.append("\n};");
+
+                    bindBuilder.addMethod(
+                        MethodSpec.methodBuilder("methods")
+                            .addModifiers(Modifier.PUBLIC)
+                            .returns(ArrayTypeName.of(topicMethod))
+                            .addCode(CodeBlock.of(methodsBuilder.toString(), methodsArgs.toArray()))
+                            .build());
+
+                    TypeSpec bindClass = bindBuilder.build();
+
+                    PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(typeElement);
+
+                    JavaFile javaFile = JavaFile.builder(packageElement.getQualifiedName().toString(), bindClass).build();
+
+                    try (Writer writer = bindingObject.openWriter()) {
+                        javaFile.writeTo(writer);
+                    }
+                }
+                catch (IOException e) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage(), typeElement);
+                }
+            }
         }
 
-        try {
-          String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
-          JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
+        generateConfigFiles(providers);
 
-          providers.computeIfAbsent(topicBindingClassName, (c) -> new HashSet<>()).add(bindingQualifiedName);
-
-          TypeName topicClassRef = TypeName.get(typeElement.asType());
-
-          TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
-          bindBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
-          bindBuilder.addAnnotation(suppressWarning);
-          bindBuilder.addSuperinterface(topicBindingClass);
-
-          List<TopicMethodInfo> methods = new ArrayList<>();
-          List<? extends Element> allMembers = processingEnv.getElementUtils().getAllMembers(typeElement);
-          for (Element member : allMembers) {
-            if (member instanceof ExecutableElement executableElement) {
-              Element enclosingElement = executableElement.getEnclosingElement();
-              if (enclosingElement != element) {
-                continue;
-              }
-
-              TypeMirror returnType = executableElement.getReturnType();
-              if (!isVoid(returnType)) {
-                error(typeElement.getQualifiedName() + "." + executableElement.getSimpleName() + " must return void", typeElement, null);
-                return false;
-              }
-
-              List<TypeName> paramTypes = new ArrayList<>();
-
-              AppendTypeResult types = appendTypes(executableElement.getParameters(), paramTypes, "", "", false);
-
-              methods.add(new TopicMethodInfo(member.getSimpleName().toString(), types));
-            }
-          }
-
-          if (methods.isEmpty()) {
-            error(typeElement.getQualifiedName() + " no methods for call", typeElement, null);
-            return false;
-          }
-
-          bindBuilder.addMethod(
-                  MethodSpec.methodBuilder("getApiClassName").returns(String.class).addModifiers(Modifier.PUBLIC).addCode(CodeBlock.of("return $S;", typeElement.getQualifiedName().toString()))
-                          .build());
-
-          List<Object> methodsArgs = new ArrayList<>();
-          methodsArgs.add(ArrayTypeName.of(topicMethod));
-
-          StringBuilder methodsBuilder = new StringBuilder();
-          methodsBuilder.append("return new $T {\n");
-
-          for (int i = 0; i < methods.size(); i++) {
-            if (i != 0) {
-              methodsBuilder.append(",\n");
-            }
-
-            TopicMethodInfo topicMethodInfo = methods.get(i);
-
-            methodsBuilder.append("$T.create($S, ");
-            methodsArgs.add(topicMethod);
-            methodsArgs.add(topicMethodInfo.name());
-
-            AppendTypeResult types = topicMethodInfo.types();
-            if (types.argsCount() == 0) {
-              methodsBuilder.append("EMPTY_TYPES");
-            }
-            else {
-              methodsBuilder.append(types.result());
-              methodsArgs.addAll(types.types());
-            }
-
-            methodsBuilder.append(", (o, args) -> (($T) o).$L(");
-
-            methodsArgs.add(topicClassRef);
-            methodsArgs.add(topicMethodInfo.name());
-
-            for (int a = 0; a < types.argsCount(); a++) {
-              if (a != 0) {
-                methodsBuilder.append(", ");
-              }
-
-              methodsBuilder.append("($T) args[").append(a).append("]");
-              methodsArgs.add(types.args().get(a));
-            }
-
-            methodsBuilder.append(")");
-
-            methodsBuilder.append(")");
-          }
-
-          methodsBuilder.append("\n};");
-
-          bindBuilder.addMethod(
-                  MethodSpec.methodBuilder("methods").addModifiers(Modifier.PUBLIC).returns(ArrayTypeName.of(topicMethod)).addCode(CodeBlock.of(methodsBuilder.toString(), methodsArgs.toArray()))
-                          .build());
-
-          TypeSpec bindClass = bindBuilder.build();
-
-          PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(typeElement);
-
-          JavaFile javaFile = JavaFile.builder(packageElement.getQualifiedName().toString(), bindClass).build();
-
-          try (Writer writer = bindingObject.openWriter()) {
-            javaFile.writeTo(writer);
-          }
-        }
-        catch (IOException e) {
-          processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage(), typeElement);
-        }
-      }
+        return true;
     }
 
-    generateConfigFiles(providers);
-
-    return true;
-  }
-
-  private static boolean isVoid(TypeMirror mirror) {
-    if (mirror instanceof NoType) {
-      return mirror.getKind() == TypeKind.VOID;
+    private static boolean isVoid(TypeMirror mirror) {
+        return mirror instanceof NoType && mirror.getKind() == TypeKind.VOID;
     }
-    return false;
-  }
 }
