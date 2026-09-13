@@ -147,7 +147,7 @@ public class LocalizeGenerator {
         GeneratedClassReferenceExpression localizeKeyClass = myFactory.newClassReferenceExpression(localizeKey);
         keyField.withInitializer(myFactory.newMethodCallExpression(localizeKeyClass, "of", ofArguments));
 
-        String methodName = NameUtil.normalizeName(NameUtil.captilizeByDot(key));
+        String methodName = NameUtil.normalizeName(NameUtil.capitalizeByDot(key));
 
         GeneratedMethod getValueMethod = myFactory.newMethod(localizeValue, methodName);
         getValueMethod.withModifiers(GeneratedModifier.PUBLIC, GeneratedModifier.STATIC);

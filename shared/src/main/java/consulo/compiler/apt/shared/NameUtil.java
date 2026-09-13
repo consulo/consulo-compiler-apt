@@ -5,7 +5,6 @@ package consulo.compiler.apt.shared;
  * @since 2024-08-22
  */
 public class NameUtil {
-
     public static String normalizeName(String text) {
         char c = text.charAt(0);
         if (c == '0') {
@@ -20,7 +19,7 @@ public class NameUtil {
         return text;
     }
 
-    public static String captilizeByDot(String id) {
+    public static String capitalizeByDot(String id) {
         String[] split = id.replace(" ", ".").split("\\.");
 
         StringBuilder builder = new StringBuilder();

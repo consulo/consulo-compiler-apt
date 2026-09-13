@@ -44,7 +44,8 @@ import java.util.*;
  * @since 2022-06-16
  * See https://github.com/google/auto/blob/master/service/processor/src/main/java/com/google/auto/service/processor/AutoServiceProcessor.java
  */
-@SupportedAnnotationTypes({ConsuloClasses.consulo.annotation.component.ServiceImpl,
+@SupportedAnnotationTypes({
+    ConsuloClasses.consulo.annotation.component.ServiceImpl,
     ConsuloClasses.consulo.annotation.component.ExtensionImpl,
     ConsuloClasses.consulo.annotation.component.TopicImpl,
     ConsuloClasses.consulo.annotation.component.ActionImpl

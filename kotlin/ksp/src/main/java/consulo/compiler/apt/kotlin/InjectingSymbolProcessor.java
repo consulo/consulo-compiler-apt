@@ -68,7 +68,10 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
 
             SequencesKt.forEach(symbols, it -> {
                 if (it instanceof KSClassDeclaration clazz && UtilsKt.validate(clazz, (t, t2) -> true)) {
-                    GeneratedClass newClass = factory.newClass(clazz.getPackageName().asString(), clazz.getSimpleName().asString() + "_Binding");
+                    GeneratedClass newClass = factory.newClass(
+                        clazz.getPackageName().asString(),
+                        clazz.getSimpleName().asString() + "_Binding"
+                    );
 
                     String qualifiedName = newClass.getPackageName() + "." + newClass.getName();
 
@@ -85,7 +88,15 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
                             .add(new ServiceInfo(qualifiedName, clazz.getContainingFile()));
                     }
 
-                    try (OutputStreamWriter writer = new OutputStreamWriter(myCodeGenerator.createNewFile(new Dependencies(true, clazz.getContainingFile()), newClass.getPackageName(), newClass.getName(), "kt"), StandardCharsets.UTF_8)) {
+                    try (OutputStreamWriter writer = new OutputStreamWriter(
+                        myCodeGenerator.createNewFile(
+                            new Dependencies(true, clazz.getContainingFile()),
+                            newClass.getPackageName(),
+                            newClass.getName(),
+                            "kt"
+                        ),
+                        StandardCharsets.UTF_8
+                    )) {
                         newClass.write(writer);
                     }
                     catch (Exception e) {
@@ -108,7 +119,10 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
 
             String data = classes.stream().map(ServiceInfo::qualifiedName).collect(Collectors.joining(System.lineSeparator()));
 
-            try (OutputStreamWriter writer = new OutputStreamWriter(myCodeGenerator.createNewFile(dependencies, "", serviceFile, ""), StandardCharsets.UTF_8)) {
+            try (OutputStreamWriter writer = new OutputStreamWriter(
+                myCodeGenerator.createNewFile(dependencies, "", serviceFile, ""),
+                StandardCharsets.UTF_8
+            )) {
                 writer.write(data);
             }
             catch (Exception e) {
@@ -119,7 +133,13 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         return result;
     }
 
-    private void generateInjectingBinding(KSClassDeclaration ktClass, GeneratedClass generatedClass, String apiClass, String implClass, GeneratedElementFactory f) {
+    private void generateInjectingBinding(
+        KSClassDeclaration ktClass,
+        GeneratedClass generatedClass,
+        String apiClass,
+        String implClass,
+        GeneratedElementFactory f
+    ) {
         ApiInfo apiAnnotation = findAnnotationDeep(ktClass, apiClass);
         if (apiAnnotation == null) {
             throw new IllegalArgumentException("Found find " + apiClass + " in super list: " + ktClass.getQualifiedName().asString());
@@ -136,7 +156,7 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         List<GeneratedMethod> methods = new ArrayList<>();
 
         GeneratedMethod getComponentAnnotationClass = f.newMethod(
-            new GeneratedParametizedType(new GeneratedClassType(Class.class), List.of(new GeneratedWildcardType())),
+            new GeneratedParametrizedType(new GeneratedClassType(Class.class), List.of(new GeneratedWildcardType())),
             "getComponentAnnotationClass"
         );
 
@@ -146,7 +166,7 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         methods.add(getComponentAnnotationClass);
 
         GeneratedMethod getImplClass = f.newMethod(
-            new GeneratedParametizedType(new GeneratedClassType(Class.class), List.of(new GeneratedWildcardType())),
+            new GeneratedParametrizedType(new GeneratedClassType(Class.class), List.of(new GeneratedWildcardType())),
             "getImplClass"
         );
         getImplClass.withModifiers(GeneratedModifier.PUBLIC);
@@ -157,16 +177,20 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         GeneratedMethod getApiClassName = f.newMethod(new GeneratedClassType(String.class), "getApiClassName");
         getApiClassName.withModifiers(GeneratedModifier.PUBLIC);
         getApiClassName.withOverride();
-        getApiClassName.withStatement(f.newReturnStatement(f.newConstantExpression(apiAnnotation.declaration().getQualifiedName().asString())));
+        getApiClassName.withStatement(f.newReturnStatement(
+            f.newConstantExpression(apiAnnotation.declaration().getQualifiedName().asString())
+        ));
         methods.add(getApiClassName);
 
         GeneratedMethod getApiClass = f.newMethod(
-            new GeneratedParametizedType(new GeneratedClassType(Class.class), List.of(new GeneratedWildcardType())),
+            new GeneratedParametrizedType(new GeneratedClassType(Class.class), List.of(new GeneratedWildcardType())),
             "getApiClass"
         );
         getApiClass.withModifiers(GeneratedModifier.PUBLIC);
         getApiClass.withOverride();
-        getApiClass.withStatement(f.newReturnStatement(f.newClassClassExpression(new GeneratedClassType(apiAnnotation.declaration().getQualifiedName().asString()))));
+        getApiClass.withStatement(f.newReturnStatement(f.newClassClassExpression(new GeneratedClassType(
+            apiAnnotation.declaration().getQualifiedName().asString()
+        ))));
         methods.add(getApiClass);
 
         KSFunctionDeclaration injectConstructor = findInjectConstructor(ktClass);
@@ -212,7 +236,10 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         getParameterTypes.withModifiers(GeneratedModifier.PUBLIC);
         getParameterTypes.withOverride();
         if (injectConstructor.getParameters().isEmpty()) {
-            getParameterTypes.withStatement(f.newReturnStatement(f.newQualifiedExpression(f.newClassReferenceExpression(injectingBindingType), f.newReferenceExpression("EMPTY_TYPES"))));
+            getParameterTypes.withStatement(f.newReturnStatement(f.newQualifiedExpression(
+                f.newClassReferenceExpression(injectingBindingType),
+                f.newReferenceExpression("EMPTY_TYPES")
+            )));
         }
         else {
             List<GeneratedExpression> arrayExpressions = new ArrayList<>();
@@ -254,7 +281,13 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         return new GeneratedClassType(qualifiedName.asString());
     }
 
-    private void generateTopicBinding(KSClassDeclaration ktClass, GeneratedClass generatedClass, String apiClass, String implClass, GeneratedElementFactory factory) {
+    private void generateTopicBinding(
+        KSClassDeclaration ktClass,
+        GeneratedClass generatedClass,
+        String apiClass,
+        String implClass,
+        GeneratedElementFactory factory
+    ) {
         ApiInfo apiAnnotation = findAnnotationDeep(ktClass, apiClass);
         if (apiAnnotation == null) {
             throw new IllegalArgumentException("Found find " + apiClass + " in super list");
@@ -267,7 +300,6 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
         KSAnnotation implAnnotation = findAnnotation(ktClass, implClass);
 
         List<GeneratedMethod> methods = new ArrayList<>();
-
 
         generatedClass.withMethods(methods);
 
@@ -290,7 +322,10 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
             }
         }
 
-        throw new RuntimeException("There no public constructor or constructor with @Inject annotation. Injecting impossible. Class: " + ktClass.getQualifiedName().asString());
+        throw new RuntimeException(
+            "There no public constructor or constructor with @Inject annotation. Injecting impossible. Class: " +
+                ktClass.getQualifiedName().asString()
+        );
     }
 
     private Object findAnnotationValue(KSAnnotation annotation, String parameter) {
@@ -342,9 +377,7 @@ public class InjectingSymbolProcessor implements SymbolProcessor {
                 continue;
             }
 
-            String qName = qualifiedName.asString();
-
-            if (Objects.equals(annotationClass, qName)) {
+            if (Objects.equals(annotationClass, qualifiedName.asString())) {
                 return annotation;
             }
         }

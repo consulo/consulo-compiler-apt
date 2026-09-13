@@ -15,15 +15,10 @@ public class KotlinGeneratorUtil {
         if (generatedType instanceof GeneratedTypeWithNullability typeWithNullability) {
             TypeName name = toTypeName(typeWithNullability.type());
 
-            switch (typeWithNullability.nullability()) {
-                case UNSURE:
-                case NULLABLE:
-                    return name.copy(true, List.of());
-                case NON_NULL:
-                    return name.copy(false, List.of());
-            }
-
-            return name;
+            return switch (typeWithNullability.nullability()) {
+                case UNSURE, NULLABLE -> name.copy(true, List.of());
+                case NON_NULL -> name.copy(false, List.of());
+            };
         }
 
         if (generatedType instanceof GeneratedClassType classType) {
@@ -46,9 +41,9 @@ public class KotlinGeneratorUtil {
             return ClassName.bestGuess(classType.className());
         }
 
-        if (generatedType instanceof GeneratedParametizedType parametizedType) {
-            ClassName typeName = (ClassName) toTypeName(parametizedType.rawType());
-            TypeName[] params = parametizedType.argumentTypes().stream().map(KotlinGeneratorUtil::toTypeName).toArray(TypeName[]::new);
+        if (generatedType instanceof GeneratedParametrizedType parametrizedType) {
+            ClassName typeName = (ClassName) toTypeName(parametrizedType.rawType());
+            TypeName[] params = parametrizedType.argumentTypes().stream().map(KotlinGeneratorUtil::toTypeName).toArray(TypeName[]::new);
             return ParameterizedTypeName.get(typeName, params);
         }
 
@@ -65,17 +60,12 @@ public class KotlinGeneratorUtil {
     }
 
     public static KModifier toModifier(GeneratedModifier modifier) {
-        switch (modifier) {
-            case PUBLIC:
-                return KModifier.PUBLIC;
-            case PRIVATE:
-                return KModifier.PRIVATE;
-            //case STATIC:
-            //    return KModifier.STATIC;
-            case FINAL:
-                return KModifier.FINAL;
-            default:
-                throw new IllegalArgumentException(modifier.name());
-        }
+        return switch (modifier) {
+            case PUBLIC -> KModifier.PUBLIC;
+            case PRIVATE -> KModifier.PRIVATE;
+            //case STATIC -> KModifier.STATIC;
+            case FINAL -> KModifier.FINAL;
+            default -> throw new IllegalArgumentException(modifier.name());
+        };
     }
 }

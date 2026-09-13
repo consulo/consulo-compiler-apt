@@ -45,7 +45,6 @@ public class TopicBindingProcessor extends BindingProcessor {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (annotations.isEmpty()) {
             return true;
@@ -78,11 +77,6 @@ public class TopicBindingProcessor extends BindingProcessor {
                 }
 
                 try {
-                    String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
-                    JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
-
-                    providers.computeIfAbsent(topicBindingClassName, (c) -> new HashSet<>()).add(bindingQualifiedName);
-
                     TypeName topicClassRef = TypeName.get(typeElement.asType());
 
                     TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
@@ -96,8 +90,7 @@ public class TopicBindingProcessor extends BindingProcessor {
                         if (!(member instanceof ExecutableElement executableElement)) {
                             continue;
                         }
-                        Element enclosingElement = executableElement.getEnclosingElement();
-                        if (enclosingElement != element) {
+                        if (executableElement.getEnclosingElement() != element) {
                             continue;
                         }
 
@@ -128,7 +121,8 @@ public class TopicBindingProcessor extends BindingProcessor {
                             .returns(String.class)
                             .addModifiers(Modifier.PUBLIC)
                             .addCode(CodeBlock.of("return $S;", typeElement.getQualifiedName().toString()))
-                            .build());
+                            .build()
+                    );
 
                     List<Object> methodsArgs = new ArrayList<>();
                     methodsArgs.add(ArrayTypeName.of(topicMethod));
@@ -182,7 +176,8 @@ public class TopicBindingProcessor extends BindingProcessor {
                             .addModifiers(Modifier.PUBLIC)
                             .returns(ArrayTypeName.of(topicMethod))
                             .addCode(CodeBlock.of(methodsBuilder.toString(), methodsArgs.toArray()))
-                            .build());
+                            .build()
+                    );
 
                     TypeSpec bindClass = bindBuilder.build();
 
@@ -190,9 +185,12 @@ public class TopicBindingProcessor extends BindingProcessor {
 
                     JavaFile javaFile = JavaFile.builder(packageElement.getQualifiedName().toString(), bindClass).build();
 
+                    String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
+                    JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
                     try (Writer writer = bindingObject.openWriter()) {
                         javaFile.writeTo(writer);
                     }
+                    providers.computeIfAbsent(topicBindingClassName, c -> new HashSet<>()).add(bindingQualifiedName);
                 }
                 catch (IOException e) {
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.getMessage(), typeElement);

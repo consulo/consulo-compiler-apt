@@ -41,17 +41,12 @@ public class JavaGeneratorUtil {
     }
 
     public static Modifier toModifier(GeneratedModifier modifier) {
-        switch (modifier) {
-            case PUBLIC:
-                return Modifier.PUBLIC;
-            case PRIVATE:
-                return Modifier.PRIVATE;
-            case STATIC:
-                return Modifier.STATIC;
-            case FINAL:
-                return Modifier.FINAL;
-            default:
-                throw new IllegalArgumentException(modifier.name());
-        }
+        return switch (modifier) {
+            case PUBLIC -> Modifier.PUBLIC;
+            case PRIVATE -> Modifier.PRIVATE;
+            case STATIC -> Modifier.STATIC;
+            case FINAL -> Modifier.FINAL;
+            default -> throw new IllegalArgumentException(modifier.name());
+        };
     }
 }

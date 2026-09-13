@@ -17,7 +17,7 @@ package consulo.compiler.apt.shared;
 
 /**
  * @author VISTALL
- * @since 13-Jun-22
+ * @since 2022-06-13
  */
 public enum ComponentScope {
     APPLICATION,
