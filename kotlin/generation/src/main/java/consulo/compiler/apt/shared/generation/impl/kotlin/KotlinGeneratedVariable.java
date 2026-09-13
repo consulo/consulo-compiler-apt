@@ -6,10 +6,7 @@ import com.squareup.kotlinpoet.PropertySpec;
 import com.squareup.kotlinpoet.TypeName;
 import consulo.compiler.apt.shared.generation.BaseGeneratedVariable;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
-import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
 import consulo.compiler.apt.shared.generation.type.GeneratedType;
-
-import java.util.List;
 
 /**
  * @author VISTALL

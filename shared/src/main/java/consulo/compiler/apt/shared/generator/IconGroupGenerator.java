@@ -22,10 +22,10 @@ public class IconGroupGenerator {
     }
 
     public GeneratedClass parse(String relativePath, Path file) throws GenerationException {
-        String pathWithoutExpresion = NameUtil.getNameWithoutExtension(relativePath).replace("/", ".");
+        String pathWithoutExpression = NameUtil.getNameWithoutExtension(relativePath).replace("/", ".");
 
-        String pluginId = NameUtil.getPackageName(pathWithoutExpresion);
-        String localizeId = NameUtil.getShortName(pathWithoutExpresion);
+        String pluginId = NameUtil.getPackageName(pathWithoutExpression);
+        String localizeId = NameUtil.getShortName(pathWithoutExpression);
 
         String packageName = pluginId + ".icon";
 

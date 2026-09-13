@@ -11,7 +11,6 @@ import consulo.compiler.apt.shared.generation.type.GeneratedType;
  * @since 2024-08-22
  */
 public class JavaGeneratedElementFactory implements GeneratedElementFactory {
-
     @Override
     public String getId() {
         return "java";
