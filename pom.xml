@@ -49,5 +49,8 @@
 
         <module>kotlin/generation</module>
         <module>kotlin/ksp</module>
+
+        <module>scala/generation</module>
+        <module>scala/plugin</module>
     </modules>
 </project>

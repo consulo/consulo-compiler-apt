@@ -15,6 +15,7 @@ public abstract class BaseGeneratedClass implements GeneratedClass {
     protected final List<GeneratedVariable> myFields = new ArrayList<>();
     protected final List<GeneratedMethod> myMethods = new ArrayList<>();
     protected final List<GeneratedType> mySuperInterfaces = new ArrayList<>();
+    protected final List<GeneratedClass> myInnerClasses = new ArrayList<>();
 
     public BaseGeneratedClass(String packageName, String name) {
         myPackageName = packageName;
@@ -44,5 +45,10 @@ public abstract class BaseGeneratedClass implements GeneratedClass {
     @Override
     public void withMethods(List<? extends GeneratedMethod> methods) {
         myMethods.addAll(methods);
+    }
+
+    @Override
+    public void withInnerClasses(List<? extends GeneratedClass> innerClasses) {
+        myInnerClasses.addAll(innerClasses);
     }
 }

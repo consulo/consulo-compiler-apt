@@ -21,6 +21,11 @@ public interface GeneratedClass {
 
     void withMethods(List<? extends GeneratedMethod> methods);
 
+    /**
+     * Inner classes are generated as static nested classes. Package name of inner class is ignored
+     */
+    void withInnerClasses(List<? extends GeneratedClass> innerClasses);
+
     void write(Path sourceDir) throws Exception;
 
     void write(Writer writer) throws Exception;

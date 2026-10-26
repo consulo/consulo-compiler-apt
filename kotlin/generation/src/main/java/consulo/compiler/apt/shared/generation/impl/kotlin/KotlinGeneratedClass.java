@@ -5,6 +5,7 @@ import com.squareup.kotlinpoet.ClassName;
 import com.squareup.kotlinpoet.FileSpec;
 import com.squareup.kotlinpoet.TypeSpec;
 import consulo.compiler.apt.shared.generation.BaseGeneratedClass;
+import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedMethod;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.GeneratedVariable;
@@ -30,8 +31,15 @@ public class KotlinGeneratedClass extends BaseGeneratedClass {
             .addMember("%S", "warnings")
             .build());
 
+        fileSpec.addType(buildType(false));
+        return fileSpec.build();
+    }
+
+    private TypeSpec buildType(boolean inner) {
         TypeSpec.Builder classBuilder = TypeSpec.classBuilder(myName);
-        classBuilder.addKdoc("Generated code. Don't edit this class");
+        if (!inner) {
+            classBuilder.addKdoc("Generated code. Don't edit this class");
+        }
         for (GeneratedType superInterface : mySuperInterfaces) {
             classBuilder.addSuperinterfaces(List.of(KotlinGeneratorUtil.toTypeName(superInterface)));
         }
@@ -65,9 +73,13 @@ public class KotlinGeneratedClass extends BaseGeneratedClass {
         if (needCompanion) {
             classBuilder.addType(companion.build());
         }
-        
-        fileSpec.addType(classBuilder.build());
-        return fileSpec.build();
+
+        // kotlin nested classes are static by default
+        for (GeneratedClass innerClass : myInnerClasses) {
+            classBuilder.addType(((KotlinGeneratedClass) innerClass).buildType(true));
+        }
+
+        return classBuilder.build();
     }
 
     @Override
