@@ -46,6 +46,11 @@ public class TopicBindingProcessor extends BindingProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        if (roundEnv.processingOver()) {
+            writeConfigFiles();
+            return true;
+        }
+
         if (annotations.isEmpty()) {
             return true;
         }

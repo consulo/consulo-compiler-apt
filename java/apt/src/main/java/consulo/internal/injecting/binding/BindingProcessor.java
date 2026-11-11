@@ -38,6 +38,12 @@ import java.util.*;
  * @since 2023-01-25
  */
 public abstract class BindingProcessor extends AbstractProcessor {
+    /**
+     * The services of every round - written once, in the last round: a generated class handled in a later round
+     * adds to them, and the filer can't create a resource twice in one compilation.
+     */
+    private final Map<String, Set<String>> myProviders = new HashMap<>();
+
     protected record AppendTypeResult(String result, List<TypeName> types, List<TypeName> args, int argsCount) {
     }
 
@@ -144,7 +150,17 @@ public abstract class BindingProcessor extends AbstractProcessor {
     }
 
     protected void generateConfigFiles(Map<String, Set<String>> providers) {
+        for (Map.Entry<String, Set<String>> entry : providers.entrySet()) {
+            myProviders.computeIfAbsent(entry.getKey(), key -> new HashSet<>()).addAll(entry.getValue());
+        }
+    }
+
+    /**
+     * Writes the services of all rounds - called when processing is over.
+     */
+    protected void writeConfigFiles() {
         Filer filer = processingEnv.getFiler();
+        Map<String, Set<String>> providers = myProviders;
 
         for (String providerInterface : providers.keySet()) {
             String resourceFile = "META-INF/services/" + providerInterface;

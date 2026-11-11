@@ -1,2 +1,3 @@
+consulo.internal.configurable.search.SearchableTextsProcessor
 consulo.internal.injecting.binding.InjectingBindingProcessor
 consulo.internal.injecting.binding.TopicBindingProcessor
