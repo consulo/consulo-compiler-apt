@@ -22,8 +22,11 @@ import consulo.compiler.apt.shared.ConsuloClasses;
 import consulo.compiler.apt.shared.generation.GeneratedClass;
 import consulo.compiler.apt.shared.generation.GeneratedElementFactory;
 import consulo.compiler.apt.shared.generation.type.GeneratedClassType;
+import consulo.internal.source.SourceTexts;
+import com.sun.source.util.Trees;
 
 import javax.annotation.processing.Filer;
+import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
@@ -53,6 +56,24 @@ import java.util.*;
 @SupportedSourceVersion(SourceVersion.RELEASE_25)
 public class InjectingBindingProcessor extends BindingProcessor {
     private static record AnnotationResolveInfo(AnnotationMirror annotation, TypeElement typeElement) {
+    }
+
+    private static final String ACTION_PRESENTATION_BINDING = "consulo.ui.ex.action.ActionPresentationBinding";
+
+    private Trees myTrees;
+    private SourceTexts mySourceTexts;
+
+    @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        mySourceTexts = new SourceTexts(processingEnv);
+        try {
+            myTrees = Trees.instance(processingEnv);
+        }
+        catch (IllegalArgumentException e) {
+            // not javac - the constructors can't be read, the actions get no presentation in their bindings
+            myTrees = null;
+        }
     }
 
     @Override
@@ -150,6 +171,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
                     }
 
                     List<? extends VariableElement> injectParameters = null;
+                    ExecutableElement injectConstructor = null;
 
                     List<? extends Element> allMembers = processingEnv.getElementUtils().getAllMembers(typeElement);
                     for (Element member : allMembers) {
@@ -161,6 +183,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
                                 AnnotationMirror injectAnno = findAnnotation(member, ConsuloClasses.jakarta.inject.Inject);
                                 if (injectAnno != null) {
                                     injectParameters = parameters;
+                                    injectConstructor = (ExecutableElement) member;
                                     break;
                                 }
                             }
@@ -177,6 +200,7 @@ public class InjectingBindingProcessor extends BindingProcessor {
                                     // default constructor
                                     if (parameters.size() == 0 && member.getModifiers().contains(Modifier.PUBLIC)) {
                                         injectParameters = parameters;
+                                        injectConstructor = (ExecutableElement) member;
                                         break;
                                     }
                                 }
@@ -227,6 +251,10 @@ public class InjectingBindingProcessor extends BindingProcessor {
                     bindBuilder.addMethod(MethodSpec.methodBuilder("create").addParameter(Object[].class, "args").addModifiers(Modifier.PUBLIC).returns(Object.class)
                         .addCode(CodeBlock.of(newCreationBuilder.toString(), argsTypes.toArray())).build());
 
+                    if (Objects.equals(apiClassName, ConsuloClasses.consulo.annotation.component.ActionAPI) && injectConstructor != null) {
+                        addActionPresentation(bindBuilder, typeElement, injectConstructor);
+                    }
+
                     TypeSpec bindClass = bindBuilder.build();
 
                     PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(typeElement);
@@ -247,6 +275,36 @@ public class InjectingBindingProcessor extends BindingProcessor {
         generateConfigFiles(providers);
 
         return true;
+    }
+
+    /**
+     * The constant text, description and icon the constructor of an action passes to {@code super(...)} - its first
+     * localize text, its second, and its first icon - as an {@code ActionPresentationBinding}, so the stub of the
+     * action shows them without creating it. Nothing for a constructor without a constant text.
+     */
+    private void addActionPresentation(TypeSpec.Builder bindBuilder, TypeElement action, ExecutableElement constructor) {
+        if (myTrees == null || processingEnv.getElementUtils().getTypeElement(ACTION_PRESENTATION_BINDING) == null) {
+            return;
+        }
+        ActionPresentationTracker.Presentation presentation = new ActionPresentationTracker(processingEnv, myTrees, mySourceTexts).track(constructor);
+        if (presentation == null) {
+            return;
+        }
+
+        ClassName localizeValue = ClassName.bestGuess(SourceTexts.LOCALIZE_VALUE);
+        bindBuilder.addSuperinterface(ClassName.bestGuess(ACTION_PRESENTATION_BINDING));
+        bindBuilder.addMethod(MethodSpec.methodBuilder("getTemplateText").addModifiers(Modifier.PUBLIC).returns(localizeValue)
+            .addStatement("return $L", presentation.text()).build());
+        // the description and the icon have defaults - only the ones which reach the action are generated
+        if (presentation.description() != null) {
+            bindBuilder.addMethod(MethodSpec.methodBuilder("getTemplateDescription").addModifiers(Modifier.PUBLIC).returns(localizeValue)
+                .addStatement("return $L", presentation.description()).build());
+        }
+        if (presentation.icon() != null) {
+            bindBuilder.addMethod(MethodSpec.methodBuilder("getTemplateIcon").addModifiers(Modifier.PUBLIC)
+                .returns(ClassName.bestGuess(SourceTexts.IMAGE))
+                .addStatement("return $L", presentation.icon()).build());
+        }
     }
 
     private static ComponentScope getScope(Elements elementUtils, AnnotationMirror annotation) {

@@ -24,6 +24,7 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.Trees;
 import consulo.compiler.apt.shared.ConsuloClasses;
+import consulo.internal.source.SourceTexts;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -87,10 +88,12 @@ public class SearchableTextsProcessor extends AbstractProcessor {
     }
 
     private Trees myTrees;
+    private SourceTexts mySourceTexts;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
+        mySourceTexts = new SourceTexts(processingEnv);
         try {
             myTrees = Trees.instance(processingEnv);
         }
@@ -237,7 +240,7 @@ public class SearchableTextsProcessor extends AbstractProcessor {
             || returnTree.getExpression() == null) {
             return null;
         }
-        Object constant = constantValue(myTrees.getPath(getId), returnTree.getExpression(), (TypeElement) getId.getEnclosingElement());
+        Object constant = mySourceTexts.constantValue(myTrees.getPath(getId), returnTree.getExpression(), (TypeElement) getId.getEnclosingElement());
         return constant instanceof String string ? string : null;
     }
 
@@ -279,7 +282,7 @@ public class SearchableTextsProcessor extends AbstractProcessor {
 
             @Override
             public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
-                CodeBlock text = toText(getCurrentPath(), node, owner);
+                CodeBlock text = mySourceTexts.toText(getCurrentPath(), node, owner);
                 if (text != null) {
                     texts.putIfAbsent(text.toString(), text);
                 }
@@ -288,151 +291,11 @@ public class SearchableTextsProcessor extends AbstractProcessor {
         }.scan(root, null);
     }
 
-    /**
-     * The code of a localize text - {@code SomeLocalize.key(constants...)}, or
-     * {@code LocalizeValue.localizeTODO("literal")} / {@code LocalizeValue.of("literal")} - null for anything else.
-     * <p/>
-     * Read from the syntax alone: asking javac for the element of a call attributes the method early, which
-     * breaks the attribution of its lambdas later.
-     */
-    private CodeBlock toText(TreePath path, MethodInvocationTree node, TypeElement scope) {
-        if (!(node.getMethodSelect() instanceof MemberSelectTree select)) {
-            return null;
-        }
-        TypeElement owner = resolveType(path, select.getExpression());
-        if (owner == null) {
-            return null;
-        }
-        String methodName = select.getIdentifier().toString();
-        ExecutableElement method = findStaticLocalizeMethod(owner, methodName, node.getArguments().size());
-        if (method == null) {
-            return null;
-        }
 
-        String ownerName = owner.getQualifiedName().toString();
-        if (ownerName.equals(LOCALIZE_VALUE)) {
-            if (!(methodName.equals("localizeTODO") || methodName.equals("of")) || node.getArguments().size() != 1
-                || !(node.getArguments().getFirst() instanceof LiteralTree literal) || !(literal.getValue() instanceof String value)
-                || value.isBlank()) {
-                return null;
-            }
-            return CodeBlock.of("$T.$L($S)", ClassName.bestGuess(LOCALIZE_VALUE), methodName, value);
-        }
 
-        // a generated localize class - <package>.localize.<Name>Localize
-        if (!owner.getSimpleName().toString().endsWith("Localize")
-            || !(owner.getEnclosingElement() instanceof PackageElement packageElement)
-            || !packageElement.getQualifiedName().toString().endsWith(".localize")) {
-            return null;
-        }
 
-        List<CodeBlock> arguments = new ArrayList<>();
-        for (ExpressionTree argument : node.getArguments()) {
-            Object constant = constantValue(path, argument, scope);
-            // a text built from values known only at runtime can't be listed
-            if (constant == null) {
-                return null;
-            }
-            arguments.add(constant instanceof String ? CodeBlock.of("$S", constant) : CodeBlock.of("$L", literal(constant)));
-        }
-        return CodeBlock.of("$T.$L($L)", ClassName.get(owner), methodName, CodeBlock.join(arguments, ", "));
-    }
 
-    private static ExecutableElement findStaticLocalizeMethod(TypeElement owner, String name, int parameterCount) {
-        for (ExecutableElement method : ElementFilter.methodsIn(owner.getEnclosedElements())) {
-            if (method.getSimpleName().contentEquals(name)
-                && method.getModifiers().contains(Modifier.STATIC)
-                && method.getParameters().size() == parameterCount
-                && method.getReturnType().getKind() == TypeKind.DECLARED
-                && ((TypeElement) ((DeclaredType) method.getReturnType()).asElement()).getQualifiedName().contentEquals(LOCALIZE_VALUE)) {
-                return method;
-            }
-        }
-        return null;
-    }
 
-    /**
-     * A literal, a constant field of {@code scope} by its name, or a constant field of a class -
-     * {@code Owner.NAME}.
-     */
-    private Object constantValue(TreePath path, ExpressionTree expression, TypeElement scope) {
-        if (expression instanceof LiteralTree literal) {
-            return literal.getValue();
-        }
-        if (expression instanceof IdentifierTree identifier) {
-            return constantField(scope, identifier.getName().toString());
-        }
-        if (expression instanceof MemberSelectTree select) {
-            TypeElement owner = resolveType(path, select.getExpression());
-            return owner == null ? null : constantField(owner, select.getIdentifier().toString());
-        }
-        return null;
-    }
-
-    private static Object constantField(TypeElement type, String name) {
-        TypeElement current = type;
-        while (current != null) {
-            for (VariableElement field : ElementFilter.fieldsIn(current.getEnclosedElements())) {
-                if (field.getSimpleName().contentEquals(name)) {
-                    return field.getConstantValue();
-                }
-            }
-            current = current.getEnclosingElement() instanceof TypeElement outer ? outer : null;
-        }
-        return null;
-    }
-
-    /**
-     * The class a name in the source stands for - qualified, imported, or in the same package.
-     */
-    private TypeElement resolveType(TreePath path, ExpressionTree expression) {
-        String name = expression.toString();
-        if (!(expression instanceof IdentifierTree) && !(expression instanceof MemberSelectTree)) {
-            return null;
-        }
-        if (name.contains(".")) {
-            return processingEnv.getElementUtils().getTypeElement(name);
-        }
-
-        CompilationUnitTree unit = path.getCompilationUnit();
-        for (ImportTree importTree : unit.getImports()) {
-            if (importTree.isStatic()) {
-                continue;
-            }
-            String imported = importTree.getQualifiedIdentifier().toString();
-            if (imported.endsWith("." + name)) {
-                return processingEnv.getElementUtils().getTypeElement(imported);
-            }
-        }
-        String packageName = unit.getPackageName() == null ? "" : unit.getPackageName().toString();
-        TypeElement samePackage = processingEnv.getElementUtils().getTypeElement(packageName.isEmpty() ? name : packageName + "." + name);
-        if (samePackage != null) {
-            return samePackage;
-        }
-        for (ImportTree importTree : unit.getImports()) {
-            String imported = importTree.getQualifiedIdentifier().toString();
-            if (!importTree.isStatic() && imported.endsWith(".*")) {
-                TypeElement onDemand = processingEnv.getElementUtils().getTypeElement(imported.substring(0, imported.length() - 1) + name);
-                if (onDemand != null) {
-                    return onDemand;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static String literal(Object constant) {
-        if (constant instanceof Long) {
-            return constant + "L";
-        }
-        if (constant instanceof Float) {
-            return constant + "F";
-        }
-        if (constant instanceof Character c) {
-            return "'" + (c == '\'' || c == '\\' ? "\\" + c : String.valueOf(c)) + "'";
-        }
-        return String.valueOf(constant);
-    }
 
     /**
      * {@code Outer_Inner} for a nested class - the generated class sits next to the top level one.
@@ -626,15 +489,15 @@ public class SearchableTextsProcessor extends AbstractProcessor {
                     && creation.getMethodSelect() instanceof MemberSelectTree select
                     && select.getIdentifier().contentEquals("create")
                     && creation.getArguments().size() == 1
-                    && isType(resolveType(getCurrentPath(), select.getExpression()), CHECK_BOX)
+                    && isType(mySourceTexts.resolveType(getCurrentPath(), select.getExpression()), CHECK_BOX)
                     && creation.getArguments().getFirst() instanceof MethodInvocationTree textCall) {
-                    CodeBlock text = toText(new TreePath(new TreePath(getCurrentPath(), creation), textCall), textCall, scope);
+                    CodeBlock text = mySourceTexts.toText(new TreePath(new TreePath(getCurrentPath(), creation), textCall), textCall, scope);
                     if (text != null) {
                         checkBoxes.put(name, text);
                     }
                 }
                 else if (node.getType() instanceof IdentifierTree || node.getType() instanceof MemberSelectTree) {
-                    TypeElement type = resolveType(getCurrentPath(), (ExpressionTree) node.getType());
+                    TypeElement type = mySourceTexts.resolveType(getCurrentPath(), (ExpressionTree) node.getType());
                     if (type != null && findApplicationServiceApi(type) != null) {
                         services.put(name, type);
                     }
@@ -779,6 +642,6 @@ public class SearchableTextsProcessor extends AbstractProcessor {
             || !(returnTree.getExpression() instanceof MethodInvocationTree invocation)) {
             return null;
         }
-        return toText(new TreePath(new TreePath(path, returnTree), invocation), invocation, (TypeElement) method.getEnclosingElement());
+        return mySourceTexts.toText(new TreePath(new TreePath(path, returnTree), invocation), invocation, (TypeElement) method.getEnclosingElement());
     }
 }
