@@ -76,13 +76,14 @@ public class SearchableTextsProcessor extends AbstractProcessor {
     private static final String SUFFIX = "_SearchableTexts";
     private static final String SEARCHABLE_BOOLEAN_OPTIONS = "consulo.configurable.search.SearchableBooleanOptions";
     private static final String SEARCHABLE_BOOLEAN_OPTION = "consulo.configurable.search.SearchableBooleanOption";
+    private static final String PROJECT_SEARCHABLE_BOOLEAN_OPTIONS = "consulo.configurable.search.ProjectSearchableBooleanOptions";
     private static final String AFTER_OPTION_CHANGE = "consulo.configurable.search.AfterOptionChange";
     private static final String SERVICE_API = "consulo.annotation.component.ServiceAPI";
     private static final String CHECK_BOX = "consulo.ui.CheckBox";
     private static final String BOOLEAN_OPTIONS_SUFFIX = "_BooleanOptions";
 
     /**
-     * A check box bound to a boolean of an application service - {@code propertyBuilder.add(box, s::getX, s::setX)}.
+     * A check box bound to a boolean of an application or project service - {@code propertyBuilder.add(box, s::getX, s::setX)}.
      */
     private record BooleanOption(CodeBlock text, TypeElement settings, String getter, String setter) {
     }
@@ -350,8 +351,8 @@ public class SearchableTextsProcessor extends AbstractProcessor {
     }
 
     /**
-     * Generates the {@code SearchableBooleanOptions} of the check boxes the configurable binds to an application
-     * service with method references.
+     * Generates the {@code SearchableBooleanOptions} of the check boxes the configurable binds to a service with
+     * method references - the {@code ProjectSearchableBooleanOptions} when one of the services is a project one.
      */
     private void generateBooleanOptions(TypeElement type, String id) throws IOException {
         if (processingEnv.getElementUtils().getTypeElement(SEARCHABLE_BOOLEAN_OPTIONS) == null) {
@@ -386,8 +387,14 @@ public class SearchableTextsProcessor extends AbstractProcessor {
 
         // one provider of each settings type the options use
         Map<String, TypeElement> settingsTypes = new LinkedHashMap<>();
+        boolean projectLevel = false;
         for (BooleanOption option : options) {
             settingsTypes.putIfAbsent(option.settings().getQualifiedName().toString(), option.settings());
+            projectLevel |= isProjectService(findServiceApi(option.settings()));
+        }
+        if (projectLevel && processingEnv.getElementUtils().getTypeElement(PROJECT_SEARCHABLE_BOOLEAN_OPTIONS) == null) {
+            // a platform without project options
+            return;
         }
         List<String> settingsNames = new ArrayList<>(settingsTypes.keySet());
 
@@ -399,13 +406,13 @@ public class SearchableTextsProcessor extends AbstractProcessor {
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class).addMember("value", "$S", "ALL").build())
             .addAnnotation(ClassName.bestGuess(ConsuloClasses.consulo.annotation.component.ExtensionImpl))
-            .addSuperinterface(ClassName.bestGuess(SEARCHABLE_BOOLEAN_OPTIONS));
+            .addSuperinterface(ClassName.bestGuess(projectLevel ? PROJECT_SEARCHABLE_BOOLEAN_OPTIONS : SEARCHABLE_BOOLEAN_OPTIONS));
         CodeBlock.Builder getOptions = CodeBlock.builder();
         for (int i = 0; i < settingsNames.size(); i++) {
             TypeElement settingsType = settingsTypes.get(settingsNames.get(i));
             ClassName settingsClass = ClassName.get(settingsType);
             // the service is bound to its api - an implementation is cast from it
-            TypeElement apiType = findApplicationServiceApi(settingsType);
+            TypeElement apiType = findServiceApi(settingsType);
             ClassName apiClass = ClassName.get(apiType);
             generated.addField(ParameterizedTypeName.get(provider, apiClass), "mySettings" + i, Modifier.PRIVATE, Modifier.FINAL);
             constructor.addParameter(ParameterizedTypeName.get(provider, apiClass), "settings" + i);
@@ -498,7 +505,7 @@ public class SearchableTextsProcessor extends AbstractProcessor {
                 }
                 else if (node.getType() instanceof IdentifierTree || node.getType() instanceof MemberSelectTree) {
                     TypeElement type = mySourceTexts.resolveType(getCurrentPath(), (ExpressionTree) node.getType());
-                    if (type != null && findApplicationServiceApi(type) != null) {
+                    if (type != null && findServiceApi(type) != null) {
                         services.put(name, type);
                     }
                 }
@@ -537,19 +544,19 @@ public class SearchableTextsProcessor extends AbstractProcessor {
     }
 
     /**
-     * The type annotated {@code @ServiceAPI(ComponentScope.APPLICATION)} - the type itself or one of its super types -
-     * which is what the service is bound to. Null when there is none.
+     * The type annotated {@code @ServiceAPI} of the application or the project - the type itself or one of its super
+     * types - which is what the service is bound to. Null when there is none.
      */
-    private TypeElement findApplicationServiceApi(TypeElement type) {
+    private TypeElement findServiceApi(TypeElement type) {
         List<TypeElement> queue = new ArrayList<>(List.of(type));
         while (!queue.isEmpty()) {
             TypeElement current = queue.removeFirst();
             AnnotationMirror serviceApi = findAnnotation(current, SERVICE_API);
             if (serviceApi != null) {
                 AnnotationValue value = annotationValue(serviceApi, "value");
-                boolean application = value != null && value.getValue() instanceof VariableElement scope
-                    && scope.getSimpleName().contentEquals("APPLICATION");
-                return application ? current : null;
+                boolean supported = value != null && value.getValue() instanceof VariableElement scope
+                    && (scope.getSimpleName().contentEquals("APPLICATION") || scope.getSimpleName().contentEquals("PROJECT"));
+                return supported ? current : null;
             }
             if (current.getSuperclass().getKind() == TypeKind.DECLARED) {
                 queue.add((TypeElement) ((DeclaredType) current.getSuperclass()).asElement());
@@ -561,6 +568,11 @@ public class SearchableTextsProcessor extends AbstractProcessor {
             }
         }
         return null;
+    }
+
+    private boolean isProjectService(TypeElement serviceApi) {
+        AnnotationValue value = annotationValue(findAnnotation(serviceApi, SERVICE_API), "value");
+        return value != null && value.getValue() instanceof VariableElement scope && scope.getSimpleName().contentEquals("PROJECT");
     }
 
     private boolean hasBooleanGetter(TypeElement type, String name) {
