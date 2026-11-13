@@ -319,6 +319,9 @@ object BindingGenerator:
         GeneratedArrayType(generatedType(args.head))
       case AppliedType(tycon, args) =>
         val arguments = args.map {
+          // a wildcard cast would lose the bound (`Class[?]` doesn't conform to `Class[? <: T]`): cast to the bound itself
+          case TypeBounds(lo, hi) if !hi.isAny && !hi.isRef(defn.ObjectClass) => generatedType(hi)
+          case TypeBounds(lo, _) if !lo.isNothingType => generatedType(lo)
           case _: TypeBounds => GeneratedWildcardType()
           case arg => generatedType(arg)
         }
