@@ -3,6 +3,7 @@ package consulo.compiler.apt.shared.generation.impl.scala;
 import consulo.compiler.apt.shared.generation.GeneratedModifier;
 import consulo.compiler.apt.shared.generation.type.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +75,8 @@ public class ScalaGeneratorUtil {
             return "_root_.scala." + primitive;
         }
 
-        return "_root_." + name;
+        // package or class names may be Scala keywords (e.g. consulo.language.editor.template.macro)
+        return "_root_." + Arrays.stream(name.split("\\.")).map(s -> KEYWORDS.contains(s) ? "`" + s + "`" : s).collect(Collectors.joining("."));
     }
 
     public static String escapeName(String name) {
