@@ -144,9 +144,27 @@ public abstract class BindingProcessor extends AbstractProcessor {
     }
 
     protected TypeName toTypeName(TypeElement typeElement) {
-        PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(typeElement);
+        // keeps the enclosing classes of a nested class
+        return ClassName.get(typeElement);
+    }
 
-        return ClassName.get(packageElement.getQualifiedName().toString(), typeElement.getSimpleName().toString());
+    /**
+     * The binding is generated in the package of the bound class, a nested class gets its enclosing class names
+     * as prefix: {@code Outer.Inner} - {@code Outer_Inner_Binding}.
+     */
+    protected String getBindingSimpleName(TypeElement typeElement) {
+        PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(typeElement);
+        String qualifiedName = typeElement.getQualifiedName().toString();
+        String packageName = packageElement.getQualifiedName().toString();
+        String nameInPackage = packageName.isEmpty() ? qualifiedName : qualifiedName.substring(packageName.length() + 1);
+        return nameInPackage.replace('.', '_') + "_Binding";
+    }
+
+    protected String getBindingQualifiedName(TypeElement typeElement) {
+        PackageElement packageElement = processingEnv.getElementUtils().getPackageOf(typeElement);
+        String packageName = packageElement.getQualifiedName().toString();
+        String simpleName = getBindingSimpleName(typeElement);
+        return packageName.isEmpty() ? simpleName : packageName + "." + simpleName;
     }
 
     protected void generateConfigFiles(Map<String, Set<String>> providers) {

@@ -126,14 +126,14 @@ public class InjectingBindingProcessor extends BindingProcessor {
                 }
 
                 try {
-                    String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
+                    String bindingQualifiedName = getBindingQualifiedName(typeElement);
 
                     providers.computeIfAbsent(injectingBindingClassName, (c) -> new HashSet<>()).add(bindingQualifiedName);
 
-                    GeneratedClass generatedClass = factory.newClass(typeElement.getQualifiedName().toString(), typeElement.getSimpleName().toString() + "_Binding");
+                    GeneratedClass generatedClass = factory.newClass(typeElement.getQualifiedName().toString(), getBindingSimpleName(typeElement));
                     generatedClass.withSuperInterfaces(List.of(new GeneratedClassType(injectingBindingClassName)));
 
-                    TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
+                    TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(getBindingSimpleName(typeElement));
                     bindBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
                     bindBuilder.addAnnotation(suppressWarning);
                     bindBuilder.addSuperinterface(injectingBindingClass);

@@ -84,7 +84,7 @@ public class TopicBindingProcessor extends BindingProcessor {
                 try {
                     TypeName topicClassRef = TypeName.get(typeElement.asType());
 
-                    TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(typeElement.getSimpleName().toString() + "_Binding");
+                    TypeSpec.Builder bindBuilder = TypeSpec.classBuilder(getBindingSimpleName(typeElement));
                     bindBuilder.addModifiers(Modifier.PUBLIC, Modifier.FINAL);
                     bindBuilder.addAnnotation(suppressWarning);
                     bindBuilder.addSuperinterface(topicBindingClass);
@@ -190,7 +190,7 @@ public class TopicBindingProcessor extends BindingProcessor {
 
                     JavaFile javaFile = JavaFile.builder(packageElement.getQualifiedName().toString(), bindClass).build();
 
-                    String bindingQualifiedName = typeElement.getQualifiedName() + "_Binding";
+                    String bindingQualifiedName = getBindingQualifiedName(typeElement);
                     JavaFileObject bindingObject = filer.createSourceFile(bindingQualifiedName);
                     try (Writer writer = bindingObject.openWriter()) {
                         javaFile.writeTo(writer);
